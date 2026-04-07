@@ -1,0 +1,127 @@
+# =========================
+# OS FILES
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# LOG FILES
+# =========================
+*.log
+logs/
+*.out
+*.err
+
+# =========================
+# JAVA COMPILED FILES
+# =========================
+*.class
+
+# =========================
+# JAR / WAR / EAR
+# =========================
+*.jar
+*.war
+*.ear
+
+# =========================
+# BUILD DIRECTORIES
+# =========================
+bin/
+build/
+target/
+out/
+
+# =========================
+# MAVEN
+# =========================
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# =========================
+# GRADLE
+# =========================
+.gradle/
+build/
+
+# =========================
+# IDE - VS CODE
+# =========================
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# =========================
+# IDE - INTELLIJ
+# =========================
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# =========================
+# IDE - ECLIPSE
+# =========================
+.project
+.classpath
+.settings/
+
+# =========================
+# TEMP FILES
+# =========================
+*.tmp
+*.temp
+*.swp
+*~
+
+# =========================
+# ENV / SECRETS
+# =========================
+.env
+.env.*
+*.key
+*.pem
+
+# =========================
+# DATABASE FILES
+# =========================
+*.db
+*.sqlite
+
+# =========================
+# NODE (if you ever add frontend)
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# PYTHON (optional)
+# =========================
+__pycache__/
+*.pyc
+
+# =========================
+# TEST OUTPUT
+# =========================
+coverage/
+*.coverage
+
+# =========================
+# CUSTOM PROJECT FILES
+# =========================
+resources/logs/
+*.log
+
+# Ignore generated text files (optional)
+customer_counter.txt
+customers.txt
+data.txt
