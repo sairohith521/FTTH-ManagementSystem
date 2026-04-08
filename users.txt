@@ -1,0 +1,6 @@
+admin,admin123,ADMIN
+maint,maint123,MAINT
+csr,csr123,CSR
+anvitha,anvitha123,ADMIN
+rohith,rohith123,MAINT
+manju,manju123,CSR
