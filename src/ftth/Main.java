@@ -1,10 +1,10 @@
 package ftth;
+import ftth.controller.InventoryController;
 import ftth.controller.PlanAdmin;
 import ftth.service.CustomerScreen;
 import ftth.service.EmailService;
 import ftth.service.FTTH;
 import ftth.service.UserManager;
-import ftth.service.InventoryAdmin;
 import java.time.LocalDate;
 import java.util.Scanner;
 
@@ -226,7 +226,7 @@ static boolean handleAdmin(String option, Scanner sc, FTTH ftth,
         System.out.println("   Price        : Rs." + price + "/month");
         System.out.println("   Billing Date : " + billDate);
         System.out.println(" Sending confirmation email...");
-        email.sendOrderConfirmationEmail(name, pincode, service, price);
+        email.sendOrderConfirmationEmail("user@gmail.com",name, pincode, service, price);
     }
 
    
@@ -361,8 +361,10 @@ static boolean handleAdmin(String option, Scanner sc, FTTH ftth,
         //         System.out.println("Error reading data.txt: " + e.getMessage());
         //     }
         // }
-        InventoryAdmin ia=new InventoryAdmin();
-        ia.addInventory(sc);
+        // InventoryAdmin ia=new InventoryAdmin();
+        // ia.addInventory(sc);
+        InventoryController inventory = new InventoryController();
+        inventory.menu(); 
     }
 
 

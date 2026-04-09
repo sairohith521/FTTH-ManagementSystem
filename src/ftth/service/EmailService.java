@@ -1,38 +1,64 @@
 package ftth.service;
+
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 public class EmailService {
 
-    private static final String API_TOKEN = "c06d61c2bb4d0b808e44cfc854ebf578";
-    private static final String INBOX_ID  = "4517662"; // your Mailtrap inbox ID
+    // 🔐 Use environment variable (set this in your system)
+    private static final Dotenv dotenv = Dotenv.configure()
+        .ignoreIfMissing()
+        .load();
+    private static final String API_TOKEN = dotenv.get("MAILTRAP_API_TOKEN");
+    private static final String INBOX_ID  = dotenv.get("MAILTRAP_INBOX_ID");
 
-    // ✅ Correct Mailtrap Sandbox API URL
-    private static final String API_URL = "https://sandbox.api.mailtrap.io/api/send/" + INBOX_ID;
+    private static final String API_URL =
+            "https://sandbox.api.mailtrap.io/api/send/" + INBOX_ID;
 
-    // ✅ Alert when OLT has no available ports
+    // ✅ Send OLT Alert
     public void sendNoOLTEmail(int pincode) {
-        String body = "{"
-            + "\"from\": {\"email\": \"alert@aaha-telecom.fake\", \"name\": \"Aaha Telecom\"},"
-            + "\"to\": [{\"email\": \"olt-provider@network.fake\"}],"
-            + "\"subject\": \"OLT Capacity Full - Pincode " + pincode + "\","
-            + "\"text\": \"Pincode " + pincode + " has no available ports. Please install additional splitters or OLT.\""
-            + "}";
+        String subject = "OLT Capacity Full - Pincode " + pincode;
 
-        sendRequest(body, "OLT Alert");
+        String text = "Pincode " + pincode +
+                " has no available ports. Please install additional splitters or OLT.";
+
+        String jsonBody = buildJson(
+                "alert@aaha-telecom.fake",
+                "Aaha Telecom",
+                "olt-provider@network.fake",
+                subject,
+                text
+        );
+
+        sendRequest(jsonBody, "OLT Alert");
     }
 
-    // ✅ Confirmation when order is placed
-    public void sendOrderConfirmationEmail(String name, int pincode, String service, int price) {
-        String body = "{"
-            + "\"from\": {\"email\": \"noreply@aaha-telecom.fake\", \"name\": \"Aaha Telecom\"},"
-            + "\"to\": [{\"email\": \"customer@inbox.fake\"}],"
-            + "\"subject\": \"Order Confirmed - Aaha Telecom FTTH\","
-            + "\"text\": \"Dear " + name + ",\\n\\nYour FTTH connection is confirmed!\\nService: " + service + "\\nPrice: Rs." + price + "/month\\nPincode: " + pincode + "\\n\\nYour ONT will be shipped tomorrow.\\n\\nThank you,\\nAaha Telecom\""
-            + "}";
+    // ✅ Send Order Confirmation
+    public void sendOrderConfirmationEmail(String toEmail, String name,
+                                           int pincode, String service, int price) {
 
-        sendRequest(body, "Order Confirmation");
+        String subject = "Order Confirmed - Aaha Telecom FTTH";
+
+        String text = "Dear " + name + ",\n\n"
+                + "Your FTTH connection is confirmed!\n"
+                + "Service: " + service + "\n"
+                + "Price: Rs." + price + "/month\n"
+                + "Pincode: " + pincode + "\n\n"
+                + "Your ONT will be shipped tomorrow.\n\n"
+                + "Thank you,\nAaha Telecom";
+
+        String jsonBody = buildJson(
+                "noreply@aaha-telecom.fake",
+                "Aaha Telecom",
+                toEmail,
+                subject,
+                text
+        );
+
+        sendRequest(jsonBody, "Order Confirmation");
     }
     
     public void sendBillEmail(String name, String custID, String billNo,
@@ -62,16 +88,34 @@ public class EmailService {
         sendRequest(body, "Bill Email");
     }
 
-    // ✅ Internal method - correct Authorization header format
+    // ✅ Common JSON builder (reusable)
+    private String buildJson(String fromEmail, String fromName,
+                             String toEmail, String subject, String text) {
+
+        return "{"
+                + "\"from\": {\"email\": \"" + fromEmail + "\", \"name\": \"" + fromName + "\"},"
+                + "\"to\": [{\"email\": \"" + toEmail + "\"}],"
+                + "\"subject\": \"" + subject + "\","
+                + "\"text\": \"" + text.replace("\n", "\\n") + "\""
+                + "}";
+    }
+
+    // ✅ Core API call
     private void sendRequest(String jsonBody, String emailType) {
         try {
+            if (API_TOKEN == null || API_TOKEN.isEmpty()) {
+                System.out.println("❌ API Token not set. Please set MAILTRAP_API_TOKEN");
+                return;
+            }
+
             URL url = new URL(API_URL);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
+
             con.setRequestMethod("POST");
             con.setDoOutput(true);
             con.setRequestProperty("Content-Type", "application/json");
             con.setRequestProperty("Accept", "application/json");
-            con.setRequestProperty("Authorization", "Bearer " + API_TOKEN); // ✅ Fixed header
+            con.setRequestProperty("Authorization", "Bearer " + API_TOKEN);
 
             OutputStream os = con.getOutputStream();
             os.write(jsonBody.getBytes("UTF-8"));
@@ -79,14 +123,15 @@ public class EmailService {
             os.close();
 
             int code = con.getResponseCode();
+
             if (code == 200 || code == 201) {
-                System.out.println("✅ Email sent! (" + emailType + ") Check: https://mailtrap.io");
+                System.out.println("✅ " + emailType + " email sent! Check Mailtrap inbox.");
             } else {
-                System.out.println("❌ Email failed. Response code: " + code);
+                System.out.println("❌ Failed (" + emailType + ") - Code: " + code);
             }
 
         } catch (Exception e) {
-            System.out.println("❌ Error sending email: " + e.getMessage());
+            System.out.println("❌ Error sending " + emailType + ": " + e.getMessage());
         }
     }
 }
