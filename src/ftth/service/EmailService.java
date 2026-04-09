@@ -34,6 +34,33 @@ public class EmailService {
 
         sendRequest(body, "Order Confirmation");
     }
+    
+    public void sendBillEmail(String name, String custID, String billNo,
+                              String service, int planCharge, int gst, int total,
+                              String billDate, String dueDate) {
+        String text = "Dear " + name + ","
+            + "\\n\\nYour Aaha Telecom bill has been generated."
+            + "\\n\\nBill No     : " + billNo
+            + "\\nCustomer ID : " + custID
+            + "\\nService     : " + service
+            + "\\nBill Date   : " + billDate
+            + "\\nDue Date    : " + dueDate
+            + "\\n\\nPlan Charge : Rs." + planCharge
+            + "\\nGST (18%)   : Rs." + gst
+            + "\\n----------------------"
+            + "\\nTotal Due   : Rs." + total
+            + "\\n\\nPlease pay by " + dueDate + " to avoid interruption."
+            + "\\n\\nThank you,\\nAaha Telecom";
+
+        String body = "{"
+            + "\"from\": {\"email\": \"billing@aaha-telecom.fake\", \"name\": \"Aaha Telecom Billing\"},"
+            + "\"to\": [{\"email\": \"customer@inbox.fake\"}],"
+            + "\"subject\": \"Your Aaha Telecom Bill - " + billNo + "\","
+            + "\"text\": \"" + text + "\""
+            + "}";
+
+        sendRequest(body, "Bill Email");
+    }
 
     // ✅ Internal method - correct Authorization header format
     private void sendRequest(String jsonBody, String emailType) {

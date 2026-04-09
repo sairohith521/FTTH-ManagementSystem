@@ -1,5 +1,6 @@
 package ftth;
 import ftth.controller.PlanAdmin;
+import ftth.service.CustomerScreen;
 import ftth.service.EmailService;
 import ftth.service.FTTH;
 import ftth.service.UserManager;
@@ -116,7 +117,7 @@ static boolean handleAdmin(String option, Scanner sc, FTTH ftth,
             case "2": doMove      (sc, ftth, email); return false;
             case "3": doChange    (sc, ftth);        return false;
             case "4": doDelete    (sc, ftth);        return false;
-            case "5": doLookup    (sc, ftth);        return false;
+           case "5": CustomerScreen.show(sc, ftth, email); return false;
             case "6": doInventory (sc, ftth);        return false;
             case "7": doMaint     (sc);              return false;
             case "8": doCapacity  (sc, ftth);        return false;
@@ -139,7 +140,7 @@ static boolean handleAdmin(String option, Scanner sc, FTTH ftth,
             case "2": doMove   (sc, ftth, email); return false;
             case "3": doChange (sc, ftth);        return false;
             case "4": doDelete (sc, ftth);        return false;
-            case "5": doLookup (sc, ftth);        return false;
+            case "5": CustomerScreen.show(sc, ftth, email); return false;
             case "0":
                 System.out.println("  Logged out.");
                 return true;
@@ -397,73 +398,78 @@ static boolean handleAdmin(String option, Scanner sc, FTTH ftth,
 
 
     static void doUserMgmt(Scanner sc, UserManager um, String currentUser) {
-        System.out.println("\n--- User Management ---");
-        // System.out.println("  [1] List Users");
-        System.out.println("  [1] Add User");
-        System.out.println("  [2] Change Password");
-        System.out.println("  [3] Change Role");
-        System.out.println("  [4] Delete User");
-        System.out.println("  [5] Back");
-        System.out.print("Choose: ");
-        String sub = sc.nextLine().trim();
+        while (true) {
+            System.out.println("\n--- User Management ---");
+            // System.out.println("  [1] List Users");
+            System.out.println("  [1] Add User");
+            System.out.println("  [2] Change Password");
+            System.out.println("  [3] Change Role");
+            System.out.println("  [4] Delete User");
+            System.out.println("  [5] Back");
+            System.out.print("Choose: ");
+            String sub = sc.nextLine().trim();
 
-        switch (sub) {
+            switch (sub) {
 
-            // case "1":
-            //     um.listUsers();
-            //     break;
+                // case "1":
+                //     um.listUsers();
+                //     break;
 
-            case "1": {
-                System.out.print("  New Username : ");
-                String uname = sc.nextLine().trim();
-                System.out.print("  Password     : ");
-                String pass  = sc.nextLine().trim();
-                System.out.println("  Role options : ADMIN | CSR | MAINT");
-                System.out.print("  Role         : ");
-                String role  = sc.nextLine().trim();
-                um.addUser(uname, pass, role);
-                break;
-            }
-
-            case "2": {
-                System.out.print("  Username     : ");
-                String uname    = sc.nextLine().trim();
-                System.out.print("  New Password : ");
-                String newPass  = sc.nextLine().trim();
-                boolean ok = um.changePassword(uname, newPass);
-                if (ok) System.out.println(" Password updated for '" + uname + "'.");
-                else    System.out.println(" Failed.");
-                break;
-            }
-
-            case "3": {
-                System.out.print("  Username     : ");
-                String uname   = sc.nextLine().trim();
-                System.out.println("  Role options : ADMIN | CSR | MAINT");
-                System.out.print("  New Role     : ");
-                String newRole = sc.nextLine().trim();
-                boolean ok = um.changeRole(uname, newRole);
-                if (ok) System.out.println(" Role updated for '" + uname + "'.");
-                else    System.out.println(" Failed.");
-                break;
-            }
-
-            case "4": {
-                System.out.print("  Username to delete: ");
-                String uname = sc.nextLine().trim();
-                if (uname.equalsIgnoreCase(currentUser)) {
-                    System.out.println(" You cannot delete your own account.");
+                case "1": {
+                    System.out.print("  New Username : ");
+                    String uname = sc.nextLine().trim();
+                    System.out.print("  Password     : ");
+                    String pass  = sc.nextLine().trim();
+                    System.out.println("  Role options : CSR | MAINT");
+                    System.out.print("  Role         : ");
+                    String role  = sc.nextLine().trim();
+                    um.addUser(uname, pass, role);
                     break;
                 }
-                System.out.print("  Confirm delete '" + uname + "'? (y/n): ");
-                if (!sc.nextLine().equalsIgnoreCase("y")) break;
-                um.deleteUser(uname);
-                break;
-            }
 
-            case "5":
-            default:
-                break;
+                case "2": {
+                    System.out.print("  Username     : ");
+                    String uname    = sc.nextLine().trim();
+                    System.out.print("  New Password : ");
+                    String newPass  = sc.nextLine().trim();
+                    boolean ok = um.changePassword(uname, newPass);
+                    if (ok) System.out.println(" Password updated for '" + uname + "'.");
+                    else    System.out.println(" Failed.");
+                    break;
+                }
+
+                case "3": {
+                    System.out.print("  Username     : ");
+                    String uname   = sc.nextLine().trim();
+                    System.out.println("  Role options :  CSR | MAINT");
+                    System.out.print("  New Role     : ");
+                    String newRole = sc.nextLine().trim();
+                    boolean ok = um.changeRole(uname, newRole);
+                    if (ok) System.out.println(" Role updated for '" + uname + "'.");
+                    else    System.out.println(" Failed.");
+                    break;
+                }
+
+                case "4": {
+                    System.out.print("  Username to delete: ");
+                    String uname = sc.nextLine().trim();
+                    if (uname.equalsIgnoreCase(currentUser)) {
+                        System.out.println(" You cannot delete your own account.");
+                        break;
+                    }
+                    System.out.print("  Confirm delete '" + uname + "'? (y/n): ");
+                    if (!sc.nextLine().equalsIgnoreCase("y")) break;
+                    um.deleteUser(uname);
+                    break;
+                }
+
+                case "5":
+                    return;
+
+                default:
+                    System.out.println(" Invalid option.");
+                    break;
+            }
         }
     }
 

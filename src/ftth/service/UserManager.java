@@ -82,8 +82,8 @@ public class UserManager {
         role     = role.trim().toUpperCase();
 
         // Validate role
-        if (!role.equals("ADMIN") && !role.equals("CSR") && !role.equals("MAINT")) {
-            System.out.println("Invalid role. Must be ADMIN, CSR, or MAINT.");
+        if (!role.equals("CSR") && !role.equals("MAINT")) {
+            System.out.println("Invalid role. Must be  CSR, or MAINT.");
             return false;
         }
 
@@ -115,8 +115,8 @@ public class UserManager {
     // =========================================================
     public boolean changeRole(String username, String newRole) {
         newRole = newRole.trim().toUpperCase();
-        if (!newRole.equals("ADMIN") && !newRole.equals("CSR") && !newRole.equals("MAINT")) {
-            System.out.println("Invalid role. Must be ADMIN, CSR, or MAINT.");
+        if ( !newRole.equals("CSR") && !newRole.equals("MAINT")) {
+            System.out.println("Invalid role. Must be  CSR, or MAINT.");
             return false;
         }
         return rewriteUser(username, null, newRole);
