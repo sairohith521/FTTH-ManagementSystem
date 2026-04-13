@@ -1,102 +1,58 @@
 package ftth.service;
 
+import ftth.model.InventoryDetails;
 import ftth.model.OLT;
 import ftth.repository.InventoryRepository;
-import java.util.*;
+
+import java.util.List;
 
 public class InventoryService {
 
-    private List<OLT> olts;
-    private InventoryRepository repo;
-
     private static final int MAX_SPLITTERS = 3;
+    private static final int PORTS_PER_SPLITTER = 3;
+
+    private final InventoryRepository repo;
 
     public InventoryService() {
         repo = new InventoryRepository();
-        olts = repo.loadAll();
     }
 
     public List<OLT> getByPincode(String pin) {
-        List<OLT> res = new ArrayList<>();
-
-        for (OLT o : olts) {
-            if (o.getPincode().equals(pin)) res.add(o);
-        }
-        return res;
+        return repo.findOltsByPincode(pin);
     }
+
     public List<String> getUniquePincodes() {
-
-    Set<String> set = new HashSet<>();
-
-    for (OLT o : olts) {
-        set.add(o.getPincode());
+        return repo.findAllPincodes();
     }
 
-    return new ArrayList<>(set);
-}
-
-    public void addOLT(OLT olt) {
-        olts.add(olt);
-        repo.saveAll(olts);
+    public String addOLT(String pincode, String type, int splitterCount) {
+        if (splitterCount <= 0 || splitterCount > MAX_SPLITTERS) {
+            throw new IllegalArgumentException("Splitters must be between 1 and " + MAX_SPLITTERS + ".");
+        }
+        return repo.addOlt(pincode, type, splitterCount, PORTS_PER_SPLITTER);
     }
 
     public boolean removeOLT(String id) {
-
-        Iterator<OLT> it = olts.iterator();
-
-        while (it.hasNext()) {
-            OLT o = it.next();
-
-            if (o.getOltId().equals(id)) {
-
-                if (o.isHasCustomer()) return false;
-
-                it.remove();
-                repo.saveAll(olts);
-                return true;
-            }
-        }
-        return false;
+        return repo.removeOlt(id);
     }
 
     public boolean addSplitter(String id) {
-
-        for (OLT o : olts) {
-            if (o.getOltId().equals(id)) {
-
-                if (o.getSplitterCount() >= MAX_SPLITTERS) return false;
-
-                o.setSplitterCount(o.getSplitterCount() + 1);
-                repo.saveAll(olts);
-                return true;
-            }
-        }
-        return false;
+        return repo.addSplitter(id, PORTS_PER_SPLITTER);
     }
 
-    public boolean removeSplitter(String id) {
-
-        for (OLT o : olts) {
-            if (o.getOltId().equals(id)) {
-
-                if (o.getSplitterCount() == 0) return false;
-
-                o.setSplitterCount(o.getSplitterCount() - 1);
-                repo.saveAll(olts);
-                return true;
-            }
-        }
-        return false;
+    public boolean removeSplitter(String oltId, int splitterNumber) {
+        return repo.removeSplitter(oltId, splitterNumber);
     }
 
-    // 🔥 ID generator
-    public String generateOLTId(String type, String pin) {
-        int count = 1;
+    public InventoryDetails getInventoryDetails(String oltId) {
+        return repo.findInventoryDetails(oltId);
+    }
 
-        for (OLT o : olts) {
-            if (o.getPincode().equals(pin)) count++;
-        }
+    public int getMaxSplitters() {
+        return MAX_SPLITTERS;
+    }
 
-        return type + "-" + pin + "-" + count;
+    public int getPortsPerSplitter() {
+        return PORTS_PER_SPLITTER;
     }
 }
