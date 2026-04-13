@@ -394,7 +394,6 @@ static boolean handleAdmin(String option, Scanner sc, FTTH ftth,
     static void doPlanAdmin(Scanner sc) {
          PlanAdmin admin = new PlanAdmin();
          admin.handleMenu();
-        sc.nextLine();
     }
 
 

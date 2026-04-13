@@ -10,6 +10,17 @@ public final class DbConnection {
     private static final String USER = "root";
     private static final String PASSWORD = "Aaha@6598";
 
+    static {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(
+                "MySQL JDBC driver not found. Add mysql-connector-j to runtime classpath (example: -cp \"out;lib/*\").",
+                e
+            );
+        }
+    }
+
     private DbConnection() {
     }
 

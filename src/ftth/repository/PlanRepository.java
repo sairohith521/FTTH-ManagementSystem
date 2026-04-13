@@ -1,74 +1,139 @@
 package ftth.repository;
 
+import ftth.config.DbConnection;
 import ftth.model.Plan;
-import java.io.*;
-import java.util.*;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PlanRepository {
 
-    private static final String FILE_PATH = "plan.txt";
+    public boolean insertPlan(Plan plan) {
+        String sql = """
+                INSERT INTO plan_admin
+                (plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """;
 
-    // 🔹 Save all plans to file
-    public void saveAllPlans(List<Plan> plans) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_PATH))) {
-            for (Plan p : plans) {
-                bw.write(convertToString(p));
-                bw.newLine();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        try (Connection con = DbConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, plan.getCode());
+            ps.setString(2, plan.getName());
+            ps.setString(3, plan.getSpeed());
+            ps.setString(4, plan.getDataLimit());
+            ps.setInt(5, plan.getOtts());
+            ps.setDouble(6, plan.getPrice());
+            ps.setString(7, plan.getOltType());
+            ps.setBoolean(8, plan.isActive());
+
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error adding plan", e);
         }
     }
 
-    // 🔹 Read all plans from file
-    public List<Plan> loadAllPlans() {
-    List<Plan> plans = new ArrayList<>();
+    public List<Plan> findAllPlans() {
+        String sql = """
+                SELECT plan_id, plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active
+                FROM plan_admin
+                ORDER BY plan_id
+                """;
 
-    try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
-        String line;
+        List<Plan> plans = new ArrayList<>();
 
-        while ((line = br.readLine()) != null) {
+        try (Connection con = DbConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-            System.out.println("Reading line: " + line); // DEBUG
+            while (rs.next()) {
+                plans.add(toPlan(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error loading plans", e);
+        }
 
-            try {
-                Plan p = convertToPlan(line);
-                if (p != null) {
-                    plans.add(p);
+        return plans;
+    }
+
+    public Plan findPlanById(long id) {
+        String sql = """
+                SELECT plan_id, plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active
+                FROM plan_admin
+                WHERE plan_id = ?
+                """;
+
+        try (Connection con = DbConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return toPlan(rs);
                 }
-            } catch (Exception e) {
-                System.out.println("❌ Failed to parse line: " + line);
-                e.printStackTrace();
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error finding plan", e);
         }
 
-    } catch (Exception e) {
-        e.printStackTrace();
+        return null;
     }
 
-    return plans;
-}
+    public boolean updatePlan(long id, Plan updatedPlan) {
+        String sql = """
+                UPDATE plan_admin
+                SET plan_code = ?, plan_name = ?, speed = ?, data_limit = ?, ott_count = ?, price = ?, olt_type = ?, is_active = ?
+                WHERE plan_id = ?
+                """;
 
-    // 🔹 Convert Plan → String
-    private String convertToString(Plan p) {
-        return p.getId() + "," + p.getName() + "," + p.getSpeed() + "," +
-               p.getDataLimit() + "," + p.getOtts() + "," +
-               p.getPrice() + "," + p.getOltType() + "," + p.isActive();
+        try (Connection con = DbConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, updatedPlan.getCode());
+            ps.setString(2, updatedPlan.getName());
+            ps.setString(3, updatedPlan.getSpeed());
+            ps.setString(4, updatedPlan.getDataLimit());
+            ps.setInt(5, updatedPlan.getOtts());
+            ps.setDouble(6, updatedPlan.getPrice());
+            ps.setString(7, updatedPlan.getOltType());
+            ps.setBoolean(8, updatedPlan.isActive());
+            ps.setLong(9, id);
+
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating plan", e);
+        }
     }
 
-    // 🔹 Convert String → Plan
-    private Plan convertToPlan(String line) {
-        String[] data = line.split(",");
+    public boolean deletePlan(long id) {
+        String sql = "DELETE FROM plan_admin WHERE plan_id = ?";
 
+        try (Connection con = DbConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error deleting plan", e);
+        }
+    }
+
+    private Plan toPlan(ResultSet rs) throws SQLException {
         return new Plan(
-            data[0],
-            data[1],
-            data[2],
-            data[3],
-            Integer.parseInt(data[4]),
-            Double.parseDouble(data[5]),
-            data[6],
-            Boolean.parseBoolean(data[7])
+                rs.getLong("plan_id"),
+                rs.getString("plan_code"),
+                rs.getString("plan_name"),
+                rs.getString("speed"),
+                rs.getString("data_limit"),
+                rs.getInt("ott_count"),
+                rs.getDouble("price"),
+                rs.getString("olt_type"),
+                rs.getBoolean("is_active")
         );
     }
 }
