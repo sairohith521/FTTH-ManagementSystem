@@ -5,6 +5,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 public class EmailService {
 
     private static final String API_TOKEN = System.getenv("MAILTRAP_API_TOKEN");
@@ -23,7 +25,15 @@ public class EmailService {
                 text
         );
 
-        sendRequest(body, "OLT Alert");
+        String jsonBody = buildJson(
+                "alert@aaha-telecom.fake",
+                "Aaha Telecom",
+                "olt-provider@network.fake",
+                subject,
+                text
+        );
+
+        sendRequest(jsonBody, "OLT Alert");
     }
 
     public void sendOrderConfirmationEmail(String name, int pincode, String service, int price) {
@@ -44,7 +54,23 @@ public class EmailService {
                 text
         );
 
-        sendRequest(body, "Order Confirmation");
+        String text = "Dear " + name + ",\n\n"
+                + "Your FTTH connection is confirmed!\n"
+                + "Service: " + service + "\n"
+                + "Price: Rs." + price + "/month\n"
+                + "Pincode: " + pincode + "\n\n"
+                + "Your ONT will be shipped tomorrow.\n\n"
+                + "Thank you,\nAaha Telecom";
+
+        String jsonBody = buildJson(
+                "noreply@aaha-telecom.fake",
+                "Aaha Telecom",
+                toEmail,
+                subject,
+                text
+        );
+
+        sendRequest(jsonBody, "Order Confirmation");
     }
 
     public void sendBillEmail(String name, String custID, String billNo,
@@ -109,6 +135,7 @@ public class EmailService {
         try {
             URL url = new URL(apiUrl);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
+
             con.setRequestMethod("POST");
             con.setDoOutput(true);
             con.setRequestProperty("Content-Type", "application/json");
@@ -120,6 +147,7 @@ public class EmailService {
             }
 
             int code = con.getResponseCode();
+
             if (code == 200 || code == 201) {
                 System.out.println("SUCCESS: " + emailType + " email sent. Check Mailtrap inbox.");
             } else {
