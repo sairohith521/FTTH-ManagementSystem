@@ -9,6 +9,7 @@ public class PlanAdmin {
 
     private final PlanService service;
     private final Scanner sc;
+    private static final String[] VALID_OLTS = {"OLT300", "OLT500"};
 
     public PlanAdmin(Scanner sc) {
         service = new PlanService();
@@ -69,28 +70,17 @@ public class PlanAdmin {
     }
 
     private void addPlanFlow() {
-        System.out.print("Enter Plan Code: ");
-        String code = sc.nextLine().trim();
-
-        System.out.print("Enter Plan Name: ");
-        String name = sc.nextLine().trim();
-
-        System.out.print("Enter Speed: ");
-        String speed = sc.nextLine().trim();
-
-        System.out.print("Enter Data Limit: ");
-        String data = sc.nextLine().trim();
+        String name = readPlanName("Enter Plan Name: ");
+        String speed = readSpeed("Enter Speed (MBPS): ");
+        String data = readDataLimit("Enter Data Limit (GB): ");
 
         System.out.print("Enter OTT count: ");
         int otts = readInt();
 
-        System.out.print("Enter Price: ");
-        double price = readDouble();
+        double price = readPrice("Enter Price: ");
+        String olt = readOlt("Enter OLT Type (OLT300/OLT500): ");
 
-        System.out.print("Enter OLT Type OLT300/OLT500: ");
-        String olt = sc.nextLine().trim();
-
-        Plan plan = new Plan(code, name, speed, data, otts, price, olt, true);
+        Plan plan = new Plan(name, speed, data, otts, price, olt, true);
 
         boolean added = service.addPlan(plan);
         if (added) System.out.println("Plan added successfully.");
@@ -111,28 +101,17 @@ public class PlanAdmin {
 
         System.out.println("Current: " + existing);
 
-        System.out.print("Enter new plan code: ");
-        String code = sc.nextLine().trim();
-
-        System.out.print("Enter new name: ");
-        String name = sc.nextLine().trim();
-
-        System.out.print("Enter new speed: ");
-        String speed = sc.nextLine().trim();
-
-        System.out.print("Enter new data limit: ");
-        String data = sc.nextLine().trim();
+        String name = readPlanName("Enter new name: ");
+        String speed = readSpeed("Enter new Speed (MBPS): ");
+        String data = readDataLimit("Enter new Data Limit (GB): ");
 
         System.out.print("Enter new OTT count: ");
         int otts = readInt();
 
-        System.out.print("Enter new price: ");
-        double price = readDouble();
+        double price = readPrice("Enter new Price: ");
+        String olt = readOlt("Enter new OLT Type (OLT300/OLT500): ");
 
-        System.out.print("Enter new OLT type OLT300/OLT500: ");
-        String olt = sc.nextLine().trim();
-
-        Plan updated = new Plan(id, code, name, speed, data, otts, price, olt, existing.isActive());
+        Plan updated = new Plan(id, name, speed, data, otts, price, olt, existing.isActive());
         boolean success = service.updatePlan(id, updated);
 
         if (success) System.out.println("Plan updated successfully.");
@@ -140,7 +119,6 @@ public class PlanAdmin {
     }
 
     private void togglePlanFlow() {
-        // Show all plans so user can see current status
         service.viewAllPlans();
 
         System.out.print("\nEnter Plan ID to Enable/Disable: ");
@@ -197,6 +175,69 @@ public class PlanAdmin {
         else         System.out.println("Failed to delete plan.");
     }
 
+    // --- Validation helpers ---
+
+    private String readPlanName(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String name = sc.nextLine().trim();
+            if (!name.isEmpty() && name.matches("^[a-zA-Z0-9 ]+$")) {
+                return name;
+            }
+            System.out.println("Enter valid plan name (no special characters allowed).");
+        }
+    }
+
+    private String readSpeed(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String input = sc.nextLine().trim();
+            try {
+                int speed = Integer.parseInt(input);
+                if (speed > 0) return speed + " MBPS";
+            } catch (NumberFormatException ignored) {}
+            System.out.println("Enter valid speed (numbers only).");
+        }
+    }
+
+    private String readDataLimit(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String input = sc.nextLine().trim();
+            if (input.equalsIgnoreCase("unlimited")) {
+                return "Unlimited Internet";
+            }
+            try {
+                int limit = Integer.parseInt(input);
+                if (limit > 0) return limit + " GB";
+            } catch (NumberFormatException ignored) {}
+            System.out.println("Enter valid data limit (enter 'Unlimited' or a number).");
+        }
+    }
+
+    private double readPrice(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String input = sc.nextLine().trim();
+            try {
+                double price = Double.parseDouble(input);
+                if (price > 0) return price;
+            } catch (NumberFormatException ignored) {}
+            System.out.println("Enter valid price (numbers only).");
+        }
+    }
+
+    private String readOlt(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String input = sc.nextLine().trim().toUpperCase();
+            for (String valid : VALID_OLTS) {
+                if (valid.equals(input)) return input;
+            }
+            System.out.println("Enter valid OLT type (OLT300 or OLT500 only).");
+        }
+    }
+
     private int readInt() {
         while (true) {
             String value = sc.nextLine().trim();
@@ -215,17 +256,6 @@ public class PlanAdmin {
                 return Long.parseLong(value);
             } catch (NumberFormatException e) {
                 System.out.print("Enter a valid id: ");
-            }
-        }
-    }
-
-    private double readDouble() {
-        while (true) {
-            String value = sc.nextLine().trim();
-            try {
-                return Double.parseDouble(value);
-            } catch (NumberFormatException e) {
-                System.out.print("Enter a valid amount: ");
             }
         }
     }
