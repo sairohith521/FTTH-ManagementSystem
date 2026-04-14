@@ -5,8 +5,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import io.github.cdimascio.dotenv.Dotenv;
-
 public class EmailService {
 
     private static final String API_TOKEN = System.getenv("MAILTRAP_API_TOKEN");
@@ -16,14 +14,6 @@ public class EmailService {
         String subject = "OLT Capacity Full - Pincode " + pincode;
         String text = "Pincode " + pincode
                 + " has no available ports. Please install additional splitters or OLT.";
-
-        String body = buildJson(
-                "alert@aaha-telecom.fake",
-                "Aaha Telecom",
-                "olt-provider@network.fake",
-                subject,
-                text
-        );
 
         String jsonBody = buildJson(
                 "alert@aaha-telecom.fake",
@@ -36,24 +26,8 @@ public class EmailService {
         sendRequest(jsonBody, "OLT Alert");
     }
 
-    public void sendOrderConfirmationEmail(String name, int pincode, String service, int price) {
+    public void sendOrderConfirmationEmail(String toEmail, String name, int pincode, String service, int price) {
         String subject = "Order Confirmed - Aaha Telecom FTTH";
-        String text = "Dear " + name + ",\n\n"
-                + "Your FTTH connection is confirmed!\n"
-                + "Service: " + service + "\n"
-                + "Price: Rs." + price + "/month\n"
-                + "Pincode: " + pincode + "\n\n"
-                + "Your ONT will be shipped tomorrow.\n\n"
-                + "Thank you,\nAaha Telecom";
-
-        String body = buildJson(
-                "noreply@aaha-telecom.fake",
-                "Aaha Telecom",
-                "customer@inbox.fake",
-                subject,
-                text
-        );
-
         String text = "Dear " + name + ",\n\n"
                 + "Your FTTH connection is confirmed!\n"
                 + "Service: " + service + "\n"
