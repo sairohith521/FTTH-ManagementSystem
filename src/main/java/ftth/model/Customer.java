@@ -11,6 +11,7 @@ public class Customer {
     private double salary;
     private String status;
     private Timestamp createdAt;
+    private long planId;
 
     // 🔹 Default Constructor
     public Customer() {
@@ -18,7 +19,7 @@ public class Customer {
 
     // 🔹 Parameterized Constructor
     public Customer(long customerId, String customerCode, String fullName,
-                    String email, double salary, String status, Timestamp createdAt) {
+                    String email, double salary, String status,long planId, Timestamp createdAt) {
         this.customerId = customerId;
         this.customerCode = customerCode;
         this.fullName = fullName;
@@ -26,12 +27,19 @@ public class Customer {
         this.salary = salary;
         this.status = status;
         this.createdAt = createdAt;
+        this.planId=planId;
     }
 
     // 🔹 Getters and Setters
 
     public long getCustomerId() {
         return customerId;
+    }
+    public long getPlanId() {
+        return planId;
+    }
+    public void setPlanId(long planId) {
+        this.planId = planId;
     }
 
     public void setCustomerId(long customerId) {

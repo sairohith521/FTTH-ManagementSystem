@@ -3,7 +3,9 @@ package ftth.service;
 import java.time.LocalDate;
 
 import ftth.model.Customer;
+import ftth.model.Plan;
 import ftth.repository.CustomerRepository;
+import ftth.util.InputUtil;
 
 public class CustomerConnectionService {
 
@@ -25,37 +27,40 @@ public class CustomerConnectionService {
         this.customerRepo=customerRepo;
     }
 
-    public void addCustomer(String name, String choice,
+    public void addCustomer(String name, Long planId,
                         int pincode, double salary,
-                        boolean confirm) {
+                        boolean confirm,String gmail) {
 
-    String service = "";
-    int price = 0;
 
-    if (choice.equals("1")) {
-        service = "300 MBPS, 60 GB/Month";
-        price = 499;
-    } else if (choice.equals("2")) {
-        service = "500 MBPS, Unlimited";
-        price = 1499;
-    } else {
-        System.out.println("Invalid choice.");
-        return;
-    }
+Plan selectedPlan = planService.findPlanById(planId);
 
+if (selectedPlan == null) {
+    System.out.println("Invalid plan selected.");
+    return;
+}
+
+String service = selectedPlan.getName();
+int price = (int) selectedPlan.getPrice();
+long planID=selectedPlan.getId();
     // 🔹 Pincode check (KEEP SAME for now)
-    if (!ftth.checkPincode(pincode)) {
-        System.out.println("Service NOT available in pincode " + pincode);
-        email.sendNoOLTEmail(pincode);
-        return;
-    }
+    // if (!ftth.checkPincode(pincode)) {
+    //     System.out.println("Service NOT available in pincode " + pincode);
+    //     email.sendNoOLTEmail(pincode);
+    //     return;
+    // }
+    if (!inventoryService.checkPincode(pincode)) {
+    System.out.println("Service NOT available in pincode " + pincode);
+    email.sendNoOLTEmail(pincode);
+    return;
+}
 
-    int ports = ftth.getAvailablePorts(pincode);
-    if (ports <= 0) {
-        System.out.println("No ports available.");
-        email.sendNoOLTEmail(pincode);
-        return;
-    }
+    int ports = inventoryService.getAvailablePorts(pincode);
+
+if (ports <= 0) {
+    System.out.println("No ports available.");
+    email.sendNoOLTEmail(pincode);
+    return;
+}
 
     // 🔹 Salary check
     if (!ftth.checkSalary(salary)) {
@@ -72,10 +77,10 @@ public class CustomerConnectionService {
 
     customer.setCustomerCode(custID);
     customer.setFullName(name);
-    customer.setEmail("user@gmail.com");
+    customer.setEmail(gmail);
     customer.setSalary(salary);
     customer.setStatus("ACTIVE");
-
+    customer.setPlanId(planID);
     customerRepo.save(customer);
 
     // 🔹 Billing logic (UNCHANGED)
@@ -132,39 +137,41 @@ public class CustomerConnectionService {
 public Customer getCustomer(String customerCode) {
     return customerRepo.findByCode(customerCode);
 }
-public void changePlan(String custID, String choice, boolean confirm) {
+public void changePlan(String custID, long planId, boolean confirm) {
 
-    // 🔹 Find customer
-    String[] customer = ftth.findCustomer(custID);
+    // 🔹 Find customer from DB
+    Customer customer = customerRepo.findByCode(custID);
 
     if (customer == null) {
         System.out.println("Customer ID not found.");
         return;
     }
 
-    System.out.println("Current Service : " + customer[6] + " @ Rs." + customer[7]);
+    // 🔹 Get current plan
+    Plan currentPlan = planService.findPlanById(customer.getPlanId());
 
-    String newService = "";
-    int newPrice = 0;
+    if (currentPlan != null) {
+        System.out.println("Current Service : " 
+            + currentPlan.getName() + " @ Rs." + currentPlan.getPrice());
+    }
 
-    if (choice.equals("1")) {
-        newService = "300 MBPS, 60 GB/Month";
-        newPrice = 499;
-    } else if (choice.equals("2")) {
-        newService = "500 MBPS, Unlimited";
-        newPrice = 1499;
-    } else {
-        System.out.println("Invalid choice.");
+    // 🔹 Get new plan from DB
+    Plan newPlan = planService.findPlanById(planId);
+
+    if (newPlan == null) {
+        System.out.println("Invalid plan selected.");
         return;
     }
 
     if (!confirm) return;
 
-    // 🔹 Update plan
-    boolean changed = ftth.changeCustomer(custID, newService, newPrice);
+    // 🔹 Update DB
+    boolean changed = customerRepo.updateCustomerPlan(custID, planId);
 
     if (changed) {
-        System.out.println("Service updated successfully.");
+        System.out.println("\nService updated successfully.");
+        System.out.println("New Plan : " + newPlan.getName());
+        System.out.println("Price    : Rs." + newPlan.getPrice());
     } else {
         System.out.println("Change failed.");
     }
@@ -189,8 +196,8 @@ public void disconnectCustomer(String custID, boolean confirm) {
     if (!confirm) return;
 
     // 🔹 Disconnect logic
-    // boolean deleted = ftth.deleteCustomer(custID);
-     boolean deleted = false;
+    boolean deleted = ftth.deleteCustomer(custID);
+
     if (deleted) {
         System.out.println("Customer " + custID +
                 " disconnected. Port is now free.");

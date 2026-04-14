@@ -35,21 +35,20 @@ public class InventoryRepository {
     }
 
     public List<OLT> findOltsByPincode(String pincode) {
-        String sql = """
-                SELECT o.olt_code,
-                       sa.pincode,
-                       o.olt_type,
-                       COUNT(DISTINCT s.splitter_id) AS splitter_count,
-                       COUNT(pt.port_id) AS total_ports,
-                       COALESCE(SUM(CASE WHEN pt.port_status = 'AVAILABLE' THEN 1 ELSE 0 END), 0) AS available_ports
-                FROM olts o
-                JOIN service_areas sa ON sa.service_area_id = o.service_area_id
-                LEFT JOIN splitters s ON s.olt_id = o.olt_id AND s.is_active = TRUE
-                LEFT JOIN ports pt ON pt.splitter_id = s.splitter_id
-                WHERE sa.pincode = ? AND o.is_active = TRUE
-                GROUP BY o.olt_id, o.olt_code, sa.pincode, o.olt_type
-                ORDER BY o.olt_code
-                """;
+        String sql =
+        "SELECT o.olt_code, " +
+        "sa.pincode, " +
+        "o.olt_type, " +
+        "COUNT(DISTINCT s.splitter_id) AS splitter_count, " +
+        "COUNT(pt.port_id) AS total_ports, " +
+        "COALESCE(SUM(CASE WHEN pt.port_status = 'AVAILABLE' THEN 1 ELSE 0 END), 0) AS available_ports " +
+        "FROM olts o " +
+        "JOIN service_areas sa ON sa.service_area_id = o.service_area_id " +
+        "LEFT JOIN splitters s ON s.olt_id = o.olt_id AND s.is_active = TRUE " +
+        "LEFT JOIN ports pt ON pt.splitter_id = s.splitter_id " +
+        "WHERE sa.pincode = ? AND o.is_active = TRUE " +
+        "GROUP BY o.olt_id, o.olt_code, sa.pincode, o.olt_type " +
+        "ORDER BY o.olt_code";
         List<OLT> olts = new ArrayList<>();
 
         try (Connection con = DbConnection.getConnection();
@@ -78,11 +77,10 @@ public class InventoryRepository {
     public String addOlt(String pincode, String oltType, int splitterCount, int portsPerSplitter) {
         String serviceAreaSql = "SELECT service_area_id FROM service_areas WHERE pincode = ?";
         String createServiceAreaSql = "INSERT INTO service_areas (pincode, is_active) VALUES (?, TRUE)";
-        String nextCodeSql = """
-                SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(olt_code, '-', -1) AS UNSIGNED)), 0) + 1 AS next_no
-                FROM olts
-                WHERE service_area_id = ? AND olt_type = ?
-                """;
+        String nextCodeSql =
+        "SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(olt_code, '-', -1) AS UNSIGNED)), 0) + 1 AS next_no " +
+        "FROM olts " +
+        "WHERE service_area_id = ? AND olt_type = ?";
         String insertOltSql = "INSERT INTO olts (olt_code, service_area_id, olt_type, is_active) VALUES (?, ?, ?, TRUE)";
         String insertSplitterSql = "INSERT INTO splitters (olt_id, splitter_number, is_active) VALUES (?, ?, TRUE)";
         String insertPortSql = "INSERT INTO ports (splitter_id, port_number, port_status) VALUES (?, ?, 'AVAILABLE')";
@@ -120,13 +118,12 @@ public class InventoryRepository {
     }
 
     public boolean removeOlt(String oltCode) {
-        String assignedSql = """
-                SELECT COUNT(*)
-                FROM ports p
-                JOIN splitters s ON s.splitter_id = p.splitter_id
-                JOIN olts o ON o.olt_id = s.olt_id
-                WHERE o.olt_code = ? AND p.port_status = 'ASSIGNED'
-                """;
+       String assignedSql =
+        "SELECT COUNT(*) " +
+        "FROM ports p " +
+        "JOIN splitters s ON s.splitter_id = p.splitter_id " +
+        "JOIN olts o ON o.olt_id = s.olt_id " +
+        "WHERE o.olt_code = ? AND p.port_status = 'ASSIGNED'";
         String deletePortsSql = "DELETE p FROM ports p JOIN splitters s ON s.splitter_id = p.splitter_id JOIN olts o ON o.olt_id = s.olt_id WHERE o.olt_code = ?";
         String deleteSplittersSql = "DELETE s FROM splitters s JOIN olts o ON o.olt_id = s.olt_id WHERE o.olt_code = ?";
         String deleteOltSql = "DELETE FROM olts WHERE olt_code = ?";
@@ -213,12 +210,11 @@ public class InventoryRepository {
     }
 
     public boolean removeSplitter(String oltCode, int splitterNumber) {
-        String splitterSql = """
-                SELECT s.splitter_id
-                FROM splitters s
-                JOIN olts o ON o.olt_id = s.olt_id
-                WHERE o.olt_code = ? AND s.splitter_number = ? AND s.is_active = TRUE
-                """;
+        String splitterSql =
+        "SELECT s.splitter_id " +
+        "FROM splitters s " +
+        "JOIN olts o ON o.olt_id = s.olt_id " +
+        "WHERE o.olt_code = ? AND s.splitter_number = ? AND s.is_active = TRUE";
         String assignedSql = "SELECT COUNT(*) FROM ports WHERE splitter_id = ? AND port_status = 'ASSIGNED'";
         String deletePortsSql = "DELETE FROM ports WHERE splitter_id = ?";
         String deleteSplitterSql = "DELETE FROM splitters WHERE splitter_id = ?";
@@ -260,21 +256,20 @@ public class InventoryRepository {
     }
 
     public InventoryDetails findInventoryDetails(String oltCode) {
-        String oltSql = """
-                SELECT o.olt_id,
-                       o.olt_code,
-                       sa.pincode,
-                       o.olt_type,
-                       COUNT(DISTINCT s.splitter_id) AS splitter_count,
-                       COUNT(p.port_id) AS total_ports,
-                       COALESCE(SUM(CASE WHEN p.port_status = 'AVAILABLE' THEN 1 ELSE 0 END), 0) AS available_ports
-                FROM olts o
-                JOIN service_areas sa ON sa.service_area_id = o.service_area_id
-                LEFT JOIN splitters s ON s.olt_id = o.olt_id AND s.is_active = TRUE
-                LEFT JOIN ports p ON p.splitter_id = s.splitter_id
-                WHERE o.olt_code = ?
-                GROUP BY o.olt_id, o.olt_code, sa.pincode, o.olt_type
-                """;
+       String oltSql =
+        "SELECT o.olt_id, " +
+        "o.olt_code, " +
+        "sa.pincode, " +
+        "o.olt_type, " +
+        "COUNT(DISTINCT s.splitter_id) AS splitter_count, " +
+        "COUNT(p.port_id) AS total_ports, " +
+        "COALESCE(SUM(CASE WHEN p.port_status = 'AVAILABLE' THEN 1 ELSE 0 END), 0) AS available_ports " +
+        "FROM olts o " +
+        "JOIN service_areas sa ON sa.service_area_id = o.service_area_id " +
+        "LEFT JOIN splitters s ON s.olt_id = o.olt_id AND s.is_active = TRUE " +
+        "LEFT JOIN ports p ON p.splitter_id = s.splitter_id " +
+        "WHERE o.olt_code = ? " +
+        "GROUP BY o.olt_id, o.olt_code, sa.pincode, o.olt_type";
         String splitterSql = "SELECT splitter_id, olt_id, splitter_number, is_active FROM splitters WHERE olt_id = ? ORDER BY splitter_number";
         String portSql = "SELECT port_id, splitter_id, port_number, port_status FROM ports WHERE splitter_id = ? ORDER BY port_number";
 
@@ -458,4 +453,50 @@ public class InventoryRepository {
         }
         return 1;
     }
+    public boolean existsByPincode(int pincode) {
+
+    String sql = "SELECT COUNT(*) FROM service_areas WHERE pincode = ?";
+
+    try (Connection con = DbConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        ps.setString(1, String.valueOf(pincode));
+
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1) > 0;
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return false;
+}
+public int getAvailablePorts(int pincode) {
+
+    String sql =
+        "SELECT COUNT(DISTINCT p.port_id) " +
+        "FROM ports p " +
+        "JOIN splitters s ON s.splitter_id = p.splitter_id " +
+        "JOIN olts o ON o.olt_id = s.olt_id " +
+        "JOIN service_areas sa ON sa.service_area_id = o.service_area_id " +
+        "WHERE sa.pincode = ? AND p.port_status = 'AVAILABLE'";
+
+    try (Connection con = DbConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        ps.setInt(1, pincode);
+
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1);
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return 0;
+}
 }

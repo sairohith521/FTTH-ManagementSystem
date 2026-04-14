@@ -55,4 +55,11 @@ public class InventoryService {
     public int getPortsPerSplitter() {
         return PORTS_PER_SPLITTER;
     }
+    public boolean checkPincode(int pincode) {
+    return repo.existsByPincode(pincode);
+}
+
+public int getAvailablePorts(int pincode) {
+    return repo.getAvailablePorts(pincode);
+}
 }

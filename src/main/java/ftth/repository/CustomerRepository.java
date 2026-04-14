@@ -63,4 +63,22 @@ public class CustomerRepository {
 
     return null;
 }
+public boolean updateCustomerPlan(String custCode, long planId) {
+
+    String sql = "UPDATE customers SET plan_id = ? WHERE customer_code = ?";
+
+    try (Connection con = DbConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        ps.setLong(1, planId);
+        ps.setString(2, custCode);
+
+        return ps.executeUpdate() > 0;
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return false;
+}
 }

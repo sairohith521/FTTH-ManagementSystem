@@ -1,18 +1,23 @@
 package ftth.controller;
 
+import java.util.List;
 import java.util.Scanner;
 
 import ftth.service.FTTH;
+import ftth.service.PlanService;
 import ftth.util.InputUtil;
 import ftth.service.EmailService;
+import ftth.model.Plan;
 import ftth.service.CustomerConnectionService;
 import ftth.service.Customercreen;
 
 public class CSRController {
     private CustomerConnectionService customerConnectionService;
+    private PlanService planService;
     // 🔹 Constructor (Dependency Injection)
-    public CSRController(CustomerConnectionService customerConnectionService) {
+    public CSRController(CustomerConnectionService customerConnectionService,PlanService planService) {
         this.customerConnectionService = customerConnectionService;
+        this.planService=planService;
     }
 
     // 🔹 MAIN HANDLER (NO STATIC ❌)
@@ -59,24 +64,27 @@ public class CSRController {
 
     System.out.println("\n--- New Connection ---");
     System.out.println("Plans Available:");
-    System.out.println("  1. 300 MBPS, 60 GB/Month  -> Rs. 499");
-    System.out.println("  2. 500 MBPS, Unlimited    -> Rs. 1499");
+    // System.out.println("  1. 300 MBPS, 60 GB/Month  -> Rs. 499");
+    // System.out.println("  2. 500 MBPS, Unlimited    -> Rs. 1499");
+    List<Plan> plans = planService.getActivePlans();
+    for (Plan p : plans) {
+    System.out.println(p.getId() + ". " + p.getName()
+        + " | " + p.getSpeed()
+        + " | Rs." + p.getPrice());
+    }
+    String name = InputUtil.readValidName(sc, "Enter Customer Name: ");
 
-    System.out.print("Enter Customer Name: ");
-    String name = sc.nextLine();
-
-    System.out.print("Which Service (1/2): ");
-    String choice = sc.nextLine();
+    long planId = InputUtil.readLong(sc, "Select Plan ID: ");
 
     int pincode = InputUtil.readInt(sc, "Enter Pincode: ");
     double salary = InputUtil.readDouble(sc, "Enter Salary: ");
 
     System.out.print("Confirm order? (y/n): ");
     boolean confirm = sc.nextLine().equalsIgnoreCase("y");
-
+    String gmail = InputUtil.readEmail(sc, "Enter your Email: ");
     // 🔥 call service
-    customerConnectionService.addCustomer(name, choice, pincode, salary, confirm);
-   }
+    customerConnectionService.addCustomer(name, planId, pincode, salary, confirm,gmail);
+}
 
    private void doMove(Scanner sc) {
 
@@ -101,18 +109,37 @@ public class CSRController {
     System.out.print("Enter Customer ID: ");
     String custID = sc.nextLine().trim().toUpperCase();
 
-    System.out.println("Available Plans:");
-    System.out.println("  1. 300 MBPS, 60 GB/Month  -> Rs. 499");
-    System.out.println("  2. 500 MBPS, Unlimited    -> Rs. 1499");
+    // 🔹 Fetch plans from DB
+    List<Plan> plans = planService.getActivePlans();
 
-    System.out.print("Select New Plan (1/2): ");
-    String choice = sc.nextLine();
+    if (plans.isEmpty()) {
+        System.out.println("No plans available.");
+        return;
+    }
+
+    // 🔹 Display plans
+    System.out.println("\nAvailable Plans:");
+    for (Plan p : plans) {
+        System.out.println(p.getId() + ". " + p.getName()
+                + " | " + p.getSpeed()
+                + " | Rs." + p.getPrice());
+    }
+
+    // 🔹 Take planId input
+    long planId = InputUtil.readLong(sc, "Select New Plan ID: ");
+
+    // 🔹 Validate selection
+    Plan selectedPlan = planService.findPlanById(planId);
+    if (selectedPlan == null) {
+        System.out.println("Invalid plan selected.");
+        return;
+    }
 
     System.out.print("Confirm change? (y/n): ");
     boolean confirm = sc.nextLine().equalsIgnoreCase("y");
 
-    // 🔥 call service
-    customerConnectionService.changePlan(custID, choice, confirm);
+    // 🔥 call service (UPDATED PARAM)
+    customerConnectionService.changePlan(custID, planId, confirm);
 }
 
    private void doDelete(Scanner sc) {

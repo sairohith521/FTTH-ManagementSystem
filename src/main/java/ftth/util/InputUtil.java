@@ -87,4 +87,29 @@ public static String readMenuOption(Scanner sc, String prompt) {
         }
     }
 }
+public static String readEmail(Scanner sc, String prompt) {
+    while (true) {
+        System.out.print(prompt);
+        String email = sc.nextLine().trim();
+
+        // ✅ Simple email regex
+        if (email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            return email;
+        } else {
+            System.out.println("[ERROR] Invalid email format. Try again.");
+        }
+    }
+}
+public static long readLong(Scanner sc, String prompt) {
+    while (true) {
+        System.out.print(prompt);
+        String input = sc.nextLine().trim();
+
+        try {
+            return Long.parseLong(input);
+        } catch (NumberFormatException e) {
+            System.out.println("[ERROR] Invalid number. Please enter a valid numeric value.");
+        }
+    }
+}
 }

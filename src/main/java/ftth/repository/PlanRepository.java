@@ -13,11 +13,10 @@ import java.util.List;
 public class PlanRepository {
 
     public boolean insertPlan(Plan plan) {
-        String sql = """
-                INSERT INTO plan_admin
-                (plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """;
+        String sql =
+        "INSERT INTO plan_admin " +
+        "(plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection con = DbConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -41,11 +40,10 @@ public class PlanRepository {
     }
 
     public List<Plan> findAllPlans() {
-        String sql = """
-                SELECT plan_id, plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active
-                FROM plan_admin
-                ORDER BY plan_id
-                """;
+        String sql =
+        "SELECT plan_id, plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active " +
+        "FROM plan_admin " +
+        "ORDER BY plan_id";
 
         List<Plan> plans = new ArrayList<>();
 
@@ -64,12 +62,11 @@ public class PlanRepository {
     }
 
     public List<Plan> findActivePlans() {
-        String sql = """
-                SELECT plan_id, plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active
-                FROM plan_admin
-                WHERE is_active = TRUE
-                ORDER BY plan_id
-                """;
+        String sql =
+        "SELECT plan_id, plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active " +
+        "FROM plan_admin " +
+        "WHERE is_active = TRUE " +
+        "ORDER BY plan_id";
 
         List<Plan> plans = new ArrayList<>();
 
@@ -88,11 +85,10 @@ public class PlanRepository {
     }
 
     public Plan findPlanById(long id) {
-        String sql = """
-                SELECT plan_id, plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active
-                FROM plan_admin
-                WHERE plan_id = ?
-                """;
+        String sql =
+        "SELECT plan_id, plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active " +
+        "FROM plan_admin " +
+        "WHERE plan_id = ?";
 
         try (Connection con = DbConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -112,11 +108,10 @@ public class PlanRepository {
     }
 
     public boolean updatePlan(long id, Plan updatedPlan) {
-        String sql = """
-                UPDATE plan_admin
-                SET plan_code = ?, plan_name = ?, speed = ?, data_limit = ?, ott_count = ?, price = ?, olt_type = ?, is_active = ?
-                WHERE plan_id = ?
-                """;
+        String sql =
+        "UPDATE plan_admin " +
+        "SET plan_code = ?, plan_name = ?, speed = ?, data_limit = ?, ott_count = ?, price = ?, olt_type = ?, is_active = ? " +
+        "WHERE plan_id = ?";
 
         try (Connection con = DbConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {

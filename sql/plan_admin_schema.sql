@@ -5,10 +5,7 @@ DROP TABLE IF EXISTS plan_admin;
 
 CREATE TABLE plan_admin (
     plan_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-<<<<<<< HEAD
     plan_code VARCHAR(30) NOT NULL UNIQUE,
-=======
->>>>>>> 51191e86410df2cfde3822467b32f20f20c724c4
     plan_name VARCHAR(100) NOT NULL,
     speed VARCHAR(40) NOT NULL,
     data_limit VARCHAR(100) NOT NULL,

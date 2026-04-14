@@ -5,10 +5,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 public class EmailService {
 
-    private static final String API_TOKEN = System.getenv("MAILTRAP_API_TOKEN");
-    private static final String INBOX_ID = System.getenv("MAILTRAP_INBOX_ID");
+    private static final Dotenv dotenv = Dotenv.load();
+
+    private static final String API_TOKEN = dotenv.get("MAILTRAP_API_TOKEN");
+    private static final String INBOX_ID = dotenv.get("MAILTRAP_INBOX_ID");
 
     public void sendNoOLTEmail(int pincode) {
         String subject = "OLT Capacity Full - Pincode " + pincode;
@@ -47,37 +51,34 @@ public class EmailService {
         sendRequest(jsonBody, "Order Confirmation");
     }
 
-    public void sendBillEmail(String toEmail,
-                          String name, String custID, String billNo,
-                          String service, int planCharge, int gst, int total,
-                          String billDate, String dueDate) {
+    public void sendBillEmail(String name, String custID, String billNo,
+                              String service, int planCharge, int gst, int total,
+                              String billDate, String dueDate) {
+        String subject = "Your Aaha Telecom Bill - " + billNo;
+        String text = "Dear " + name + ",\n\n"
+                + "Your Aaha Telecom bill has been generated.\n\n"
+                + "Bill No     : " + billNo + "\n"
+                + "Customer ID : " + custID + "\n"
+                + "Service     : " + service + "\n"
+                + "Bill Date   : " + billDate + "\n"
+                + "Due Date    : " + dueDate + "\n\n"
+                + "Plan Charge : Rs." + planCharge + "\n"
+                + "GST (18%)   : Rs." + gst + "\n"
+                + "----------------------\n"
+                + "Total Due   : Rs." + total + "\n\n"
+                + "Please pay by " + dueDate + " to avoid interruption.\n\n"
+                + "Thank you,\nAaha Telecom";
 
-    String subject = "Your Aaha Telecom Bill - " + billNo;
+        String body = buildJson(
+                "billing@aaha-telecom.fake",
+                "Aaha Telecom Billing",
+                "customer@inbox.fake",
+                subject,
+                text
+        );
 
-    String text = "Dear " + name + ",\n\n"
-            + "Your Aaha Telecom bill has been generated.\n\n"
-            + "Bill No     : " + billNo + "\n"
-            + "Customer ID : " + custID + "\n"
-            + "Service     : " + service + "\n"
-            + "Bill Date   : " + billDate + "\n"
-            + "Due Date    : " + dueDate + "\n\n"
-            + "Plan Charge : Rs." + planCharge + "\n"
-            + "GST (18%)   : Rs." + gst + "\n"
-            + "----------------------\n"
-            + "Total Due   : Rs." + total + "\n\n"
-            + "Please pay by " + dueDate + " to avoid interruption.\n\n"
-            + "Thank you,\nAaha Telecom";
-
-    String body = buildJson(
-            "billing@aaha-telecom.fake",
-            "Aaha Telecom Billing",
-            toEmail,   // 🔥 FIXED HERE
-            subject,
-            text
-    );
-
-    sendRequest(body, "Bill Email");
-}
+        sendRequest(body, "Bill Email");
+    }
 
     private String buildJson(String fromEmail, String fromName,
                              String toEmail, String subject, String text) {
