@@ -3,27 +3,17 @@ package ftth.service;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-import io.github.cdimascio.dotenv.Dotenv;
+import java.nio.charset.StandardCharsets;
 
 public class EmailService {
 
-    // 🔐 Use environment variable (set this in your system)
-    private static final Dotenv dotenv = Dotenv.configure()
-        .ignoreIfMissing()
-        .load();
-    private static final String API_TOKEN = dotenv.get("MAILTRAP_API_TOKEN");
-    private static final String INBOX_ID  = dotenv.get("MAILTRAP_INBOX_ID");
+    private static final String API_TOKEN = System.getenv("MAILTRAP_API_TOKEN");
+    private static final String INBOX_ID = System.getenv("MAILTRAP_INBOX_ID");
 
-    private static final String API_URL =
-            "https://sandbox.api.mailtrap.io/api/send/" + INBOX_ID;
-
-    // ✅ Send OLT Alert
     public void sendNoOLTEmail(int pincode) {
         String subject = "OLT Capacity Full - Pincode " + pincode;
-
-        String text = "Pincode " + pincode +
-                " has no available ports. Please install additional splitters or OLT.";
+        String text = "Pincode " + pincode
+                + " has no available ports. Please install additional splitters or OLT.";
 
         String jsonBody = buildJson(
                 "alert@aaha-telecom.fake",
@@ -36,12 +26,8 @@ public class EmailService {
         sendRequest(jsonBody, "OLT Alert");
     }
 
-    // ✅ Send Order Confirmation
-    public void sendOrderConfirmationEmail(String toEmail, String name,
-                                           int pincode, String service, int price) {
-
+    public void sendOrderConfirmationEmail(String toEmail, String name, int pincode, String service, int price) {
         String subject = "Order Confirmed - Aaha Telecom FTTH";
-
         String text = "Dear " + name + ",\n\n"
                 + "Your FTTH connection is confirmed!\n"
                 + "Service: " + service + "\n"
@@ -60,55 +46,71 @@ public class EmailService {
 
         sendRequest(jsonBody, "Order Confirmation");
     }
-    
-    public void sendBillEmail(String name, String custID, String billNo,
-                              String service, int planCharge, int gst, int total,
-                              String billDate, String dueDate) {
-        String text = "Dear " + name + ","
-            + "\\n\\nYour Aaha Telecom bill has been generated."
-            + "\\n\\nBill No     : " + billNo
-            + "\\nCustomer ID : " + custID
-            + "\\nService     : " + service
-            + "\\nBill Date   : " + billDate
-            + "\\nDue Date    : " + dueDate
-            + "\\n\\nPlan Charge : Rs." + planCharge
-            + "\\nGST (18%)   : Rs." + gst
-            + "\\n----------------------"
-            + "\\nTotal Due   : Rs." + total
-            + "\\n\\nPlease pay by " + dueDate + " to avoid interruption."
-            + "\\n\\nThank you,\\nAaha Telecom";
 
-        String body = "{"
-            + "\"from\": {\"email\": \"billing@aaha-telecom.fake\", \"name\": \"Aaha Telecom Billing\"},"
-            + "\"to\": [{\"email\": \"customer@inbox.fake\"}],"
-            + "\"subject\": \"Your Aaha Telecom Bill - " + billNo + "\","
-            + "\"text\": \"" + text + "\""
-            + "}";
+    public void sendBillEmail(String toEmail,
+                          String name, String custID, String billNo,
+                          String service, int planCharge, int gst, int total,
+                          String billDate, String dueDate) {
 
-        sendRequest(body, "Bill Email");
-    }
+    String subject = "Your Aaha Telecom Bill - " + billNo;
 
-    // ✅ Common JSON builder (reusable)
+    String text = "Dear " + name + ",\n\n"
+            + "Your Aaha Telecom bill has been generated.\n\n"
+            + "Bill No     : " + billNo + "\n"
+            + "Customer ID : " + custID + "\n"
+            + "Service     : " + service + "\n"
+            + "Bill Date   : " + billDate + "\n"
+            + "Due Date    : " + dueDate + "\n\n"
+            + "Plan Charge : Rs." + planCharge + "\n"
+            + "GST (18%)   : Rs." + gst + "\n"
+            + "----------------------\n"
+            + "Total Due   : Rs." + total + "\n\n"
+            + "Please pay by " + dueDate + " to avoid interruption.\n\n"
+            + "Thank you,\nAaha Telecom";
+
+    String body = buildJson(
+            "billing@aaha-telecom.fake",
+            "Aaha Telecom Billing",
+            toEmail,   // 🔥 FIXED HERE
+            subject,
+            text
+    );
+
+    sendRequest(body, "Bill Email");
+}
+
     private String buildJson(String fromEmail, String fromName,
                              String toEmail, String subject, String text) {
-
         return "{"
-                + "\"from\": {\"email\": \"" + fromEmail + "\", \"name\": \"" + fromName + "\"},"
-                + "\"to\": [{\"email\": \"" + toEmail + "\"}],"
-                + "\"subject\": \"" + subject + "\","
-                + "\"text\": \"" + text.replace("\n", "\\n") + "\""
+                + "\"from\":{\"email\":\"" + escapeJson(fromEmail) + "\",\"name\":\"" + escapeJson(fromName) + "\"},"
+                + "\"to\":[{\"email\":\"" + escapeJson(toEmail) + "\"}],"
+                + "\"subject\":\"" + escapeJson(subject) + "\","
+                + "\"text\":\"" + escapeJson(text) + "\""
                 + "}";
     }
 
-    // ✅ Core API call
-    private void sendRequest(String jsonBody, String emailType) {
-        try {
-            if (API_TOKEN == null || API_TOKEN.isEmpty()) {
-                System.out.println("❌ API Token not set. Please set MAILTRAP_API_TOKEN");
-                return;
-            }
+    private String escapeJson(String value) {
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "")
+                .replace("\n", "\\n");
+    }
 
-            URL url = new URL(API_URL);
+    private void sendRequest(String jsonBody, String emailType) {
+        if (API_TOKEN == null || API_TOKEN.isBlank()) {
+            System.out.println("ERROR: MAILTRAP_API_TOKEN is not set.");
+            return;
+        }
+        if (INBOX_ID == null || INBOX_ID.isBlank()) {
+            System.out.println("ERROR: MAILTRAP_INBOX_ID is not set.");
+            return;
+        }
+
+        String apiUrl = "https://sandbox.api.mailtrap.io/api/send/" + INBOX_ID;
+
+        try {
+            URL url = new URL(apiUrl);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
             con.setRequestMethod("POST");
@@ -117,21 +119,20 @@ public class EmailService {
             con.setRequestProperty("Accept", "application/json");
             con.setRequestProperty("Authorization", "Bearer " + API_TOKEN);
 
-            OutputStream os = con.getOutputStream();
-            os.write(jsonBody.getBytes("UTF-8"));
-            os.flush();
-            os.close();
+            try (OutputStream os = con.getOutputStream()) {
+                os.write(jsonBody.getBytes(StandardCharsets.UTF_8));
+            }
 
             int code = con.getResponseCode();
 
             if (code == 200 || code == 201) {
-                System.out.println("✅ " + emailType + " email sent! Check Mailtrap inbox.");
+                System.out.println("SUCCESS: " + emailType + " email sent. Check Mailtrap inbox.");
             } else {
-                System.out.println("❌ Failed (" + emailType + ") - Code: " + code);
+                System.out.println("ERROR: Failed (" + emailType + ") - Code: " + code);
             }
 
         } catch (Exception e) {
-            System.out.println("❌ Error sending " + emailType + ": " + e.getMessage());
+            System.out.println("ERROR: Error sending " + emailType + ": " + e.getMessage());
         }
     }
 }

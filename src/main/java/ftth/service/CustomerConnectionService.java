@@ -189,8 +189,8 @@ public void disconnectCustomer(String custID, boolean confirm) {
     if (!confirm) return;
 
     // 🔹 Disconnect logic
-    boolean deleted = ftth.deleteCustomer(custID);
-
+    // boolean deleted = ftth.deleteCustomer(custID);
+     boolean deleted = false;
     if (deleted) {
         System.out.println("Customer " + custID +
                 " disconnected. Port is now free.");
