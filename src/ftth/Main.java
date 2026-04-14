@@ -272,22 +272,35 @@ public class Main {
 
     static void doDelete(Scanner sc, FTTH ftth) {
         System.out.println("\n--- Disconnect Customer ---");
-        System.out.print("Enter Customer ID: ");
-        String custID = sc.nextLine().trim().toUpperCase();
 
-        String[] customer = ftth.findCustomer(custID);
-        if (customer == null) { System.out.println(" Customer ID not found."); return; }
+        // Show active connections
+        ftth.listActiveConnections();
 
-        System.out.println("Customer : " + customer[1]);
-        System.out.println("Pincode  : " + customer[2]);
-        System.out.println("Service  : " + customer[3]);
+        System.out.print("Enter Connection ID to disconnect: ");
+        long connId;
+        try {
+            connId = Long.parseLong(sc.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid ID.");
+            return;
+        }
 
-        System.out.print("  Confirm disconnect? This will free the port. (y/n): ");
+        // connection: [0]ID [1]Name [2]Pincode [3]Plan [4]Price [5]Status [6]OLT [7]Splitter [8]Port [9]PortId
+        String[] conn = ftth.findConnection(connId);
+        if (conn == null) { System.out.println(" Connection not found."); return; }
+        if (conn[5].equals("DISCONNECTED")) { System.out.println(" Already disconnected."); return; }
+
+        System.out.println("\n  Customer : " + conn[1]);
+        System.out.println("  Pincode  : " + conn[2]);
+        System.out.println("  Plan     : " + conn[3] + " @ Rs." + conn[4]);
+        System.out.println("  Port     : " + conn[6] + "/Spl" + conn[7] + "/Port" + conn[8]);
+
+        System.out.print("\n  Confirm disconnect? This will free the port. (y/n): ");
         if (!sc.nextLine().equalsIgnoreCase("y")) return;
 
-        boolean deleted = ftth.deleteCustomer(custID);
-        if (deleted) System.out.println(" Customer " + custID + " disconnected. Port is now free.");
-        else         System.out.println(" Disconnect failed.");
+        boolean ok = ftth.disconnectCustomer(connId);
+        if (ok) System.out.println(" Connection " + connId + " disconnected. Port is now free.");
+        else    System.out.println(" Disconnect failed.");
     }
 
     static void doLookup(Scanner sc, FTTH ftth) {
