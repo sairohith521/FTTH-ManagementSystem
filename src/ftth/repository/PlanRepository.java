@@ -31,6 +31,9 @@ public class PlanRepository {
             ps.setBoolean(7, plan.isActive());
 
             return ps.executeUpdate() > 0;
+        } catch (java.sql.SQLIntegrityConstraintViolationException e) {
+            System.out.println("Plan code '" + plan.getCode() + "' already exists. Use a different code.");
+            return false;
         } catch (SQLException e) {
             throw new RuntimeException("Error adding plan", e);
         }
