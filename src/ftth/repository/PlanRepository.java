@@ -133,13 +133,22 @@ public class PlanRepository {
     }
 
     public boolean deletePlan(long id) {
-        String sql = "DELETE FROM plan_admin WHERE plan_id = ?";
+        String checkSql = "SELECT COUNT(*) FROM customer_connections WHERE plan_id = ? AND connection_status = 'ACTIVE'";
+        String deleteSql = "DELETE FROM plan_admin WHERE plan_id = ?";
 
-        try (Connection con = DbConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DbConnection.getConnection()) {
+            PreparedStatement checkPs = con.prepareStatement(checkSql);
+            checkPs.setLong(1, id);
+            ResultSet rs = checkPs.executeQuery();
+            rs.next();
+            if (rs.getInt(1) > 0) {
+                System.out.println("Cannot delete this plan. Active customers are using it.");
+                return false;
+            }
 
-            ps.setLong(1, id);
-            return ps.executeUpdate() > 0;
+            PreparedStatement deletePs = con.prepareStatement(deleteSql);
+            deletePs.setLong(1, id);
+            return deletePs.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error deleting plan", e);
         }

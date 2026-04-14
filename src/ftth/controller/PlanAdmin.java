@@ -193,7 +193,7 @@ public class PlanAdmin {
             System.out.print(prompt);
             String input = sc.nextLine().trim();
             try {
-                int speed = Integer.parseInt(input);
+                double speed = Double.parseDouble(input);
                 if (speed > 0) return speed + " MBPS";
             } catch (NumberFormatException ignored) {}
             System.out.println("Enter valid speed (numbers only).");
@@ -208,7 +208,7 @@ public class PlanAdmin {
                 return "Unlimited Internet";
             }
             try {
-                int limit = Integer.parseInt(input);
+                double limit = Double.parseDouble(input);
                 if (limit > 0) return limit + " GB";
             } catch (NumberFormatException ignored) {}
             System.out.println("Enter valid data limit (enter 'Unlimited' or a number).");

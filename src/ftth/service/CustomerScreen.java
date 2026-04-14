@@ -215,21 +215,8 @@ public class CustomerScreen {
 
     private static void doDisconnect(Scanner sc, FTTH ftth, String[] customer) {
         System.out.println("\n  --- Disconnect Customer ---");
-        System.out.println("  WARNING: This will FREE the port and remove the customer.");
-        System.out.println("  Customer : " + customer[1] + " (" + customer[0] + ")");
-        System.out.println("  Pincode  : " + customer[2]);
-        System.out.println("  Service  : " + customer[3]);
-        System.out.print("\n  Type customer ID to confirm disconnect: ");
-        String confirm = sc.nextLine().trim().toUpperCase();
-
-        if (!confirm.equals(customer[0])) {
-            System.out.println("  ID mismatch. Disconnect cancelled.");
-            return;
-        }
-
-        boolean ok = ftth.deleteCustomer(customer[0]);
-        if (ok) System.out.println("  Customer " + customer[0] + " disconnected. Port is now free.");
-        else    System.out.println("  Disconnect failed.");
+        System.out.println("  This feature is available from the Main Menu -> [4] Disconnect.");
+        System.out.println("  It uses the connection-based system for proper port management.");
     }
 
     private static void doGenerateBill(Scanner sc, EmailService email, String[] customer) {
