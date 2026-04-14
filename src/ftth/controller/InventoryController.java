@@ -190,7 +190,15 @@ public class InventoryController {
         }
 
         for (Splitter splitter : details.getSplitters()) {
-            System.out.println("  Splitter " + splitter.getSplitterNumber() + " | Ports: " + splitter.getPorts().size());
+            int totalPorts = splitter.getPorts().size();
+            int availablePorts = 0;
+            for (Port port : splitter.getPorts()) {
+                if ("AVAILABLE".equalsIgnoreCase(port.getStatus())) {
+                    availablePorts++;
+                }
+            }
+            System.out.println("  Splitter " + splitter.getSplitterNumber()
+                    + " | Ports: " + availablePorts + "/" + totalPorts + " available");
         }
 
         System.out.print("Enter Splitter Number to remove: ");
@@ -234,3 +242,4 @@ public class InventoryController {
         }
     }
 }
+
