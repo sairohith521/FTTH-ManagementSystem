@@ -10,7 +10,7 @@ import java.io.*;
  * Roles  : ADMIN | CSR | MAINT
  * Default seed written on first run if file is missing.
  */
-public class UserManager {
+public class UserManagerService {
 
     private static final String USERS_FILE = "users.txt";
 

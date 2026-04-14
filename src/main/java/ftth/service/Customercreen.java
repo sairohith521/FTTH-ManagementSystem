@@ -1,28 +1,40 @@
 package ftth.service;
 
-import ftth.config.DbConnection;
-import java.sql.*;
+import java.io.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-public class CustomerScreen {
-
-    // customer array: [0]ID [1]Name [2]Pincode [3]Service [4]Price [5]Status
+/**
+ * CustomerScreen — Aaha Telecom FTTH
+ *
+ * Features:
+ *   - Lookup by Customer Name OR Customer ID
+ *   - Change Plan
+ *   - Move (new pincode)
+ *   - Disconnect
+ *   - Bill Generation + optional Email
+ *
+ * Called from Main via: CustomerScreen.show(sc, ftth, email);
+ */
+public class Customercreen {
 
     public static void show(Scanner sc, FTTH ftth, EmailService email) {
         System.out.println("\n============================================");
         System.out.println("          Customer Screen");
         System.out.println("============================================");
 
+        // --- Step 1: Lookup ---
         String[] customer = lookupCustomer(sc, ftth);
         if (customer == null) {
             System.out.println("  No customer found. Returning to menu.");
             return;
         }
 
+        // --- Step 2: Display customer card ---
         printCustomerCard(customer);
 
+        // --- Step 3: Action sub-menu ---
         boolean back = false;
         while (!back) {
             System.out.println("\n  What would you like to do?");
@@ -41,21 +53,26 @@ public class CustomerScreen {
                     customer = ftth.findCustomer(customer[0]);
                     if (customer != null) printCustomerCard(customer);
                     break;
+
                 case "2":
                     doMove(sc, ftth, email, customer);
                     customer = ftth.findCustomer(customer[0]);
                     if (customer != null) printCustomerCard(customer);
                     break;
+
                 case "3":
                     doDisconnect(sc, ftth, customer);
                     back = true;
                     break;
+
                 case "4":
-                    doGenerateBill(sc, email, customer);
+                    doGenerateBill(sc, ftth, email, customer);
                     break;
+
                 case "0":
                     back = true;
                     break;
+
                 default:
                     System.out.println("  Invalid option. Please try again.");
             }
@@ -91,12 +108,13 @@ public class CustomerScreen {
             }
 
             System.out.println("\n  Multiple customers found:");
-            System.out.printf("  %-4s  %-12s  %-20s  %-8s  %-8s%n", "#", "ID", "Name", "Pincode", "Status");
+            System.out.printf("  %-4s  %-12s  %-20s  %-8s  %-8s%n",
+                    "#", "ID", "Name", "Pincode", "Status");
             System.out.println("  " + "-".repeat(58));
             for (int i = 0; i < matches.size(); i++) {
                 String[] m = matches.get(i);
                 System.out.printf("  %-4d  %-12s  %-20s  %-8s  %-8s%n",
-                        (i + 1), m[0], m[1], m[2], m[5]);
+                        (i + 1), m[0], m[1], m[2], m[8]);
             }
             System.out.print("\n  Enter # to select (0 to cancel): ");
             try {
@@ -115,23 +133,18 @@ public class CustomerScreen {
 
     private static List<String[]> findByName(String nameQuery) {
         List<String[]> results = new ArrayList<>();
-        try (Connection con = DbConnection.getConnection()) {
-            String sql = "SELECT * FROM customers WHERE LOWER(name) LIKE ?";
-            PreparedStatement ps = con.prepareStatement(sql);
-            ps.setString(1, "%" + nameQuery + "%");
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                results.add(new String[] {
-                    rs.getString("customer_id"),
-                    rs.getString("name"),
-                    String.valueOf(rs.getInt("pincode")),
-                    rs.getString("service"),
-                    String.valueOf(rs.getInt("price")),
-                    rs.getString("status")
-                });
+        try (BufferedReader br = new BufferedReader(new FileReader("customers.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.startsWith("#") || line.trim().isEmpty()) continue;
+                String[] parts = line.split(",");
+                if (parts.length < 9) continue;
+                if (parts[1].trim().toLowerCase().contains(nameQuery)) {
+                    results.add(parts);
+                }
             }
         } catch (Exception e) {
-            System.out.println("  DB Error (findByName): " + e.getMessage());
+            System.out.println("  Error searching customers: " + e.getMessage());
         }
         return results;
     }
@@ -143,32 +156,37 @@ public class CustomerScreen {
         System.out.printf ("  |  %-12s : %-26s|%n", "ID",       c[0]);
         System.out.printf ("  |  %-12s : %-26s|%n", "Name",     c[1]);
         System.out.printf ("  |  %-12s : %-26s|%n", "Pincode",  c[2]);
-        System.out.printf ("  |  %-12s : %-26s|%n", "Service",  c[3]);
-        System.out.printf ("  |  %-12s : Rs.%-23s|%n", "Price", c[4]+"/month");
-        System.out.printf ("  |  %-12s : %-26s|%n", "Status",   c[5]);
+        System.out.printf ("  |  %-12s : %-26s|%n", "OLT/SPL",  c[3]+"/"+c[4]+"/Port"+c[5]);
+        System.out.printf ("  |  %-12s : %-26s|%n", "Service",  c[6]);
+        System.out.printf ("  |  %-12s : Rs.%-23s|%n", "Price", c[7]+"/month");
+        System.out.printf ("  |  %-12s : %-26s|%n", "Status",   c[8]);
         System.out.println("  +-----------------------------------------+");
     }
 
     private static void doChangePlan(Scanner sc, FTTH ftth, String[] customer) {
+        if (customer[8].equals("DELETED")) {
+            System.out.println("  Cannot change plan - customer is disconnected.");
+            return;
+        }
         System.out.println("\n  --- Change Plan ---");
-        System.out.println("  Current : " + customer[3] + " @ Rs." + customer[4] + "/month");
+        System.out.println("  Current : " + customer[6] + " @ Rs." + customer[7] + "/month");
         System.out.println("\n  Available Plans:");
-        System.out.println("    [1] 300 MBPS 60 GB/Month   -> Rs. 499");
-        System.out.println("    [2] 500 MBPS Unlimited     -> Rs. 1499");
+        System.out.println("    [1] 300 MBPS, 60 GB/Month   -> Rs. 499");
+        System.out.println("    [2] 500 MBPS, Unlimited     -> Rs. 1499");
         System.out.print("  Select New Plan (1/2): ");
         String choice = sc.nextLine().trim();
 
         String newService; int newPrice;
-        if      (choice.equals("1")) { newService = "300 MBPS 60 GB/Month"; newPrice = 499;  }
-        else if (choice.equals("2")) { newService = "500 MBPS Unlimited";   newPrice = 1499; }
+        if      (choice.equals("1")) { newService = "300 MBPS, 60 GB/Month"; newPrice = 499;  }
+        else if (choice.equals("2")) { newService = "500 MBPS, Unlimited";   newPrice = 1499; }
         else { System.out.println("  Invalid choice."); return; }
 
-        if (newService.equals(customer[3])) {
+        if (newService.equals(customer[6])) {
             System.out.println("  Customer is already on this plan.");
             return;
         }
 
-        System.out.println("\n  Change from : " + customer[3] + " (Rs." + customer[4] + ")");
+        System.out.println("\n  Change from : " + customer[6] + " (Rs." + customer[7] + ")");
         System.out.println("  Change to   : " + newService   + " (Rs." + newPrice   + ")");
         System.out.print("  Confirm? (y/n): ");
         if (!sc.nextLine().equalsIgnoreCase("y")) { System.out.println("  Cancelled."); return; }
@@ -179,6 +197,10 @@ public class CustomerScreen {
     }
 
     private static void doMove(Scanner sc, FTTH ftth, EmailService email, String[] customer) {
+        if (customer[8].equals("DELETED")) {
+            System.out.println("  Cannot move - customer is disconnected.");
+            return;
+        }
         System.out.println("\n  --- Move Customer ---");
         System.out.println("  Current Pincode : " + customer[2]);
 
@@ -214,12 +236,38 @@ public class CustomerScreen {
     }
 
     private static void doDisconnect(Scanner sc, FTTH ftth, String[] customer) {
+        if (customer[8].equals("DELETED")) {
+            System.out.println("  Customer is already disconnected.");
+            return;
+        }
         System.out.println("\n  --- Disconnect Customer ---");
-        System.out.println("  This feature is available from the Main Menu -> [4] Disconnect.");
-        System.out.println("  It uses the connection-based system for proper port management.");
+        System.out.println("  WARNING: This will FREE the port and mark the customer DELETED.");
+        System.out.println("  Customer : " + customer[1] + " (" + customer[0] + ")");
+        System.out.println("  Pincode  : " + customer[2]);
+        System.out.println("  Port     : " + customer[3]+"/"+customer[4]+"/Port"+customer[5]);
+        System.out.println("  Service  : " + customer[6]);
+        System.out.print("\n  Type customer ID to confirm disconnect: ");
+        String confirm = sc.nextLine().trim().toUpperCase();
+
+        if (!confirm.equals(customer[0])) {
+            System.out.println("  ID mismatch. Disconnect cancelled.");
+            return;
+        }
+
+        boolean ok = ftth.deleteCustomer(customer[0]);
+        if (ok) {
+            System.out.println("  Customer " + customer[0] + " disconnected. Port is now free.");
+        } else {
+            System.out.println("  Disconnect failed.");
+        }
     }
 
-    private static void doGenerateBill(Scanner sc, EmailService email, String[] customer) {
+    private static void doGenerateBill(Scanner sc, FTTH ftth, EmailService email, String[] customer) {
+        if (customer[8].equals("DELETED")) {
+            System.out.println("  Cannot generate bill - customer is disconnected.");
+            return;
+        }
+
         LocalDate today    = LocalDate.now();
         LocalDate billDate = (today.getDayOfMonth() <= 10)
                 ? today.withDayOfMonth(10)
@@ -227,24 +275,24 @@ public class CustomerScreen {
         LocalDate dueDate  = billDate.plusDays(5);
 
         int price = 0;
-        try { price = Integer.parseInt(customer[4].trim()); } catch (Exception ignored) {}
+        try { price = Integer.parseInt(customer[7].trim()); } catch (Exception ignored) {}
 
-        int gst   = (int) Math.round(price * 0.18);
-        int total = price + gst;
+        int gst     = (int) Math.round(price * 0.18);
+        int total   = price + gst;
 
         String billNo = "BILL-" + customer[0] + "-" + today.format(DateTimeFormatter.ofPattern("yyyyMM"));
 
         System.out.println("\n  +==========================================+");
         System.out.println("  |         AAHA TELECOM - INVOICE           |");
         System.out.println("  +==========================================+");
-        System.out.printf ("  |  %-14s : %-24s|%n", "Bill No",     billNo);
-        System.out.printf ("  |  %-14s : %-24s|%n", "Date",        today);
-        System.out.printf ("  |  %-14s : %-24s|%n", "Due Date",    dueDate);
+        System.out.printf ("  |  %-14s : %-24s|%n", "Bill No",    billNo);
+        System.out.printf ("  |  %-14s : %-24s|%n", "Date",       today);
+        System.out.printf ("  |  %-14s : %-24s|%n", "Due Date",   dueDate);
         System.out.println("  +==========================================+");
         System.out.printf ("  |  %-14s : %-24s|%n", "Customer ID", customer[0]);
         System.out.printf ("  |  %-14s : %-24s|%n", "Name",        customer[1]);
         System.out.printf ("  |  %-14s : %-24s|%n", "Pincode",     customer[2]);
-        System.out.printf ("  |  %-14s : %-24s|%n", "Service",     customer[3]);
+        System.out.printf ("  |  %-14s : %-24s|%n", "Service",     customer[6]);
         System.out.println("  +==========================================+");
         System.out.printf ("  |  %-14s : Rs. %-20d|%n", "Plan Charge", price);
         System.out.printf ("  |  %-14s : Rs. %-20d|%n", "GST (18%)",   gst);
@@ -254,14 +302,8 @@ public class CustomerScreen {
 
         System.out.print("\n  Email this bill to customer? (y/n): ");
         if (sc.nextLine().equalsIgnoreCase("y")) {
-            System.out.print("  Enter customer email: ");
-            String toEmail = sc.nextLine().trim();
-            if (toEmail.isEmpty() || !toEmail.contains("@")) {
-                System.out.println("  Invalid email. Bill email not sent.");
-                return;
-            }
-            email.sendBillEmail(toEmail, customer[1], customer[0], billNo,
-                    customer[3], price, gst, total, billDate.toString(), dueDate.toString());
+            email.sendBillEmail(customer[1], customer[0], billNo,
+                    customer[6], price, gst, total, billDate.toString(), dueDate.toString());
         }
     }
 }
