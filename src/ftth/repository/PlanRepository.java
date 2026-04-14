@@ -32,6 +32,9 @@ public class PlanRepository {
             ps.setBoolean(8, plan.isActive());
 
             return ps.executeUpdate() > 0;
+        } catch (java.sql.SQLIntegrityConstraintViolationException e) {
+            System.out.println("Plan code '" + plan.getCode() + "' already exists. Use a different code.");
+            return false;
         } catch (SQLException e) {
             throw new RuntimeException("Error adding plan", e);
         }
@@ -55,6 +58,30 @@ public class PlanRepository {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error loading plans", e);
+        }
+
+        return plans;
+    }
+
+    public List<Plan> findActivePlans() {
+        String sql = """
+                SELECT plan_id, plan_code, plan_name, speed, data_limit, ott_count, price, olt_type, is_active
+                FROM plan_admin
+                WHERE is_active = TRUE
+                ORDER BY plan_id
+                """;
+
+        List<Plan> plans = new ArrayList<>();
+
+        try (Connection con = DbConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                plans.add(toPlan(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error loading active plans", e);
         }
 
         return plans;
@@ -120,6 +147,20 @@ public class PlanRepository {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error deleting plan", e);
+        }
+    }
+
+    public boolean togglePlanStatus(long id, boolean newStatus) {
+        String sql = "UPDATE plan_admin SET is_active = ? WHERE plan_id = ?";
+
+        try (Connection con = DbConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setBoolean(1, newStatus);
+            ps.setLong(2, id);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error toggling plan status", e);
         }
     }
 
