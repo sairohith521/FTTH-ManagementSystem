@@ -73,6 +73,7 @@ public class CustomerConnectionService {
     customer.setCustomerCode(custID);
     customer.setFullName(name);
     customer.setEmail("user@gmail.com");
+    customer.setPincode(pincode);
     customer.setSalary(salary);
     customer.setStatus("ACTIVE");
 
@@ -132,6 +133,15 @@ public class CustomerConnectionService {
 public Customer getCustomer(String customerCode) {
     return customerRepo.findByCode(customerCode);
 }
+
+public Integer getCustomerPincodeFromDb(String customerCode) {
+    return customerRepo.findPincodeByCustomerCode(customerCode);
+}
+
+public boolean updateCustomerPincodeInDb(String customerCode, int newPincode) {
+    return customerRepo.updatePincodeByCustomerCode(customerCode, newPincode);
+}
+
 public void changePlan(String custID, String choice, boolean confirm) {
 
     // 🔹 Find customer

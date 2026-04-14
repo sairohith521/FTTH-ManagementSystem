@@ -107,13 +107,27 @@ public class AdminController {
     System.out.print("Enter Customer ID: ");
     String custID = sc.nextLine().trim().toUpperCase();
 
+    Integer currentPincode = customerConnectionService.getCustomerPincodeFromDb(custID);
+    if (currentPincode == null) {
+        System.out.println("Customer ID not found in DB.");
+        return;
+    }
+
+    System.out.println("Current Pincode: " + currentPincode);
+
     int newPin = InputUtil.readInt(sc, "Enter New Pincode: ");
 
-    System.out.print("Confirm move? (y/n): ");
-    boolean confirm = sc.nextLine().equalsIgnoreCase("y");
+    if (newPin == currentPincode) {
+        System.out.println("Entered pincode is same as current pincode.");
+        return;
+    }
 
-    // 🔥 call service
-    customerConnectionService.moveCustomer(custID, newPin, confirm);
+    boolean updated = customerConnectionService.updateCustomerPincodeInDb(custID, newPin);
+    if (updated) {
+        System.out.println("Customer " + custID + " moved successfully to pincode " + newPin + ".");
+    } else {
+        System.out.println("Move failed. Could not update pincode in DB.");
+    }
 }
 
     private void doChange(Scanner sc) {

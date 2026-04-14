@@ -5,6 +5,7 @@ CREATE TABLE customers (
     customer_code VARCHAR(50) UNIQUE,
     full_name VARCHAR(100),
     email VARCHAR(100),
+    pincode INT,
     salary DOUBLE,
     status VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

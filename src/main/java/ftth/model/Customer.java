@@ -8,6 +8,7 @@ public class Customer {
     private String customerCode;
     private String fullName;
     private String email;
+    private int pincode;
     private double salary;
     private String status;
     private Timestamp createdAt;
@@ -18,11 +19,12 @@ public class Customer {
 
     // 🔹 Parameterized Constructor
     public Customer(long customerId, String customerCode, String fullName,
-                    String email, double salary, String status, Timestamp createdAt) {
+                    String email, int pincode, double salary, String status, Timestamp createdAt) {
         this.customerId = customerId;
         this.customerCode = customerCode;
         this.fullName = fullName;
         this.email = email;
+        this.pincode = pincode;
         this.salary = salary;
         this.status = status;
         this.createdAt = createdAt;
@@ -62,6 +64,14 @@ public class Customer {
         this.email = email;
     }
 
+    public int getPincode() {
+        return pincode;
+    }
+
+    public void setPincode(int pincode) {
+        this.pincode = pincode;
+    }
+
     public double getSalary() {
         return salary;
     }
@@ -95,6 +105,7 @@ public class Customer {
                 ", customerCode='" + customerCode + '\'' +
                 ", fullName='" + fullName + '\'' +
                 ", email='" + email + '\'' +
+            ", pincode=" + pincode +
                 ", salary=" + salary +
                 ", status='" + status + '\'' +
                 ", createdAt=" + createdAt +
