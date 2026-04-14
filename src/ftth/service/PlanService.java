@@ -21,14 +21,28 @@ public class PlanService {
         return repo.findAllPlans();
     }
 
-    public void viewPlans() {
-        List<Plan> plans = repo.findAllPlans();
+    public List<Plan> getActivePlans() {
+        return repo.findActivePlans();
+    }
 
+    public void viewActivePlans() {
+        List<Plan> plans = repo.findActivePlans();
+        if (plans.isEmpty()) {
+            System.out.println("No enabled plans available.");
+            return;
+        }
+        System.out.println("---- ENABLED PLANS ----");
+        for (Plan p : plans) {
+            System.out.println(p);
+        }
+    }
+
+    public void viewAllPlans() {
+        List<Plan> plans = repo.findAllPlans();
         if (plans.isEmpty()) {
             System.out.println("No plans available.");
             return;
         }
-
         System.out.println("---- ALL PLANS ----");
         for (Plan p : plans) {
             System.out.println(p);
@@ -41,6 +55,13 @@ public class PlanService {
 
     public boolean updatePlan(long id, Plan updatedPlan) {
         return repo.updatePlan(id, updatedPlan);
+    }
+
+    public boolean togglePlan(long id) {
+        Plan plan = repo.findPlanById(id);
+        if (plan == null) return false;
+        boolean newStatus = !plan.isActive();
+        return repo.togglePlanStatus(id, newStatus);
     }
 
     public boolean deletePlan(long id) {
