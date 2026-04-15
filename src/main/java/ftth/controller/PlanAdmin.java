@@ -2,6 +2,7 @@ package ftth.controller;
 
 import ftth.model.Plan;
 import ftth.service.PlanService;
+import ftth.util.ValidationUtil;
 
 import java.util.Scanner;
 
@@ -39,21 +40,11 @@ public class PlanAdmin {
                 }
 
                 switch (choice) {
-                    case 1:
-                        service.viewActivePlans();
-                        break;
-                    case 2:
-                        addPlanFlow();
-                        break;
-                    case 3:
-                        updatePlanFlow();
-                        break;
-                    case 4:
-                        togglePlanFlow();
-                        break;
-                    case 5:
-                        deletePlanFlow();
-                        break;
+                    case 1: service.viewActivePlans(); break;
+                    case 2: addPlanFlow(); break;
+                    case 3: updatePlanFlow(); break;
+                    case 4: togglePlanFlow(); break;
+                    case 5: deletePlanFlow(); break;
                     case 6:
                         System.out.println("Exiting...");
                         return;
@@ -69,28 +60,19 @@ public class PlanAdmin {
     }
 
     private void addPlanFlow() {
-        System.out.print("Enter Plan Code: ");
-        String code = sc.nextLine().trim();
+        String name = readPlanName();
+        String speed = readSpeed();
+        String data = readDataLimit();
 
-        System.out.print("Enter Plan Name: ");
-        String name = sc.nextLine().trim();
-
-        System.out.print("Enter Speed: ");
-        String speed = sc.nextLine().trim();
-
-        System.out.print("Enter Data Limit: ");
-        String data = sc.nextLine().trim();
-
-        System.out.print("Enter OTT count: ");
+        System.out.print("Enter OTT Count: ");
         int otts = readInt();
 
         System.out.print("Enter Price: ");
         double price = readDouble();
 
-        System.out.print("Enter OLT Type OLT300/OLT500: ");
-        String olt = sc.nextLine().trim();
+        String olt = readOltType();
 
-        Plan plan = new Plan(code, name, speed, data, otts, price, olt, true);
+        Plan plan = new Plan(name, speed, data, otts, price, olt, true);
 
         boolean added = service.addPlan(plan);
         if (added) System.out.println("Plan added successfully.");
@@ -111,28 +93,19 @@ public class PlanAdmin {
 
         System.out.println("Current: " + existing);
 
-        System.out.print("Enter new plan code: ");
-        String code = sc.nextLine().trim();
+        String name = readPlanName();
+        String speed = readSpeed();
+        String data = readDataLimit();
 
-        System.out.print("Enter new name: ");
-        String name = sc.nextLine().trim();
-
-        System.out.print("Enter new speed: ");
-        String speed = sc.nextLine().trim();
-
-        System.out.print("Enter new data limit: ");
-        String data = sc.nextLine().trim();
-
-        System.out.print("Enter new OTT count: ");
+        System.out.print("Enter new OTT Count: ");
         int otts = readInt();
 
-        System.out.print("Enter new price: ");
+        System.out.print("Enter new Price: ");
         double price = readDouble();
 
-        System.out.print("Enter new OLT type OLT300/OLT500: ");
-        String olt = sc.nextLine().trim();
+        String olt = readOltType();
 
-        Plan updated = new Plan(id, code, name, speed, data, otts, price, olt, existing.isActive());
+        Plan updated = new Plan(id, name, speed, data, otts, price, olt, existing.isActive());
         boolean success = service.updatePlan(id, updated);
 
         if (success) System.out.println("Plan updated successfully.");
@@ -140,7 +113,6 @@ public class PlanAdmin {
     }
 
     private void togglePlanFlow() {
-        // Show all plans so user can see current status
         service.viewAllPlans();
 
         System.out.print("\nEnter Plan ID to Enable/Disable: ");
@@ -195,6 +167,47 @@ public class PlanAdmin {
         boolean success = service.deletePlan(id);
         if (success) System.out.println("Plan '" + plan.getName() + "' deleted permanently.");
         else         System.out.println("Failed to delete plan.");
+    }
+
+    // --- Validated Inputs ---
+
+    private String readPlanName() {
+        while (true) {
+            System.out.print("Enter Plan Name: ");
+            String name = sc.nextLine().trim();
+            if (ValidationUtil.isValidPlanName(name)) return name;
+            System.out.println("Invalid name. Only letters, numbers and spaces allowed (2-50 chars).");
+        }
+    }
+
+    private String readSpeed() {
+        while (true) {
+            System.out.print("Enter Speed (MBPS): ");
+            String val = sc.nextLine().trim();
+            if (ValidationUtil.isValidSpeed(val)) return val + "MBPS";
+            System.out.println("Invalid speed. Enter a number only (e.g. 300, 500, 1000).");
+        }
+    }
+
+    private String readDataLimit() {
+        while (true) {
+            System.out.print("Enter Data Limit (GB) or 'Unlimited': ");
+            String val = sc.nextLine().trim();
+            if (ValidationUtil.isValidDataLimit(val)) {
+                if (val.equalsIgnoreCase("unlimited")) return "Unlimited";
+                return val + "GB";
+            }
+            System.out.println("Invalid input. Enter a number (e.g. 60) or 'Unlimited'.");
+        }
+    }
+
+    private String readOltType() {
+        while (true) {
+            System.out.print("Enter OLT Type [OLT300/OLT500]: ");
+            String olt = sc.nextLine().trim().toUpperCase();
+            if (ValidationUtil.isValidOltType(olt)) return olt;
+            System.out.println("Invalid OLT type. Enter OLT300 or OLT500.");
+        }
     }
 
     private int readInt() {
