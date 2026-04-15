@@ -12,6 +12,9 @@ public class Customer {
     private String status;
     private Timestamp createdAt;
     private long planId;
+    private int pincode;
+
+
 
     // 🔹 Default Constructor
     public Customer() {
@@ -35,6 +38,13 @@ public class Customer {
     public long getCustomerId() {
         return customerId;
     }
+    public int getPincode() {
+    return pincode;
+}
+
+public void setPincode(int pincode) {
+    this.pincode = pincode;
+}
     public long getPlanId() {
         return planId;
     }

@@ -134,8 +134,7 @@ public class AdminController {
     System.out.println("  1. 300 MBPS, 60 GB/Month  -> Rs. 499");
     System.out.println("  2. 500 MBPS, Unlimited    -> Rs. 1499");
 
-    System.out.print("Select New Plan (1/2): ");
-    String choice = sc.nextLine();
+   long planId = InputUtil.readLong(sc, "Select Plan ID: ");
 
     System.out.print("Confirm change? (y/n): ");
     boolean confirm = sc.nextLine().equalsIgnoreCase("y");

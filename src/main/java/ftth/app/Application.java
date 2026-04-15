@@ -40,7 +40,7 @@ public class Application {
 
     public void start() {
         //User Manager Controller
-        UserManagerService.initDefaults();
+        // UserManagerService.initDefaults();
         while (true) {
             // 🔹 LOGIN
             System.out.println("\n===== LOGIN =====");
