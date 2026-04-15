@@ -145,15 +145,14 @@ public class CSRController {
    private void doDelete(Scanner sc) {
 
     System.out.println("\n--- Disconnect Customer ---");
+    customerConnectionService.listActiveConnections();
 
-    System.out.print("Enter Customer ID: ");
-    String custID = sc.nextLine().trim().toUpperCase();
+    long connId = InputUtil.readLong(sc, "Enter Connection ID to disconnect: ");
 
     System.out.print("Confirm disconnect? (y/n): ");
     boolean confirm = sc.nextLine().equalsIgnoreCase("y");
 
-    // 🔥 call service
-    customerConnectionService.disconnectCustomer(custID, confirm);
+    customerConnectionService.disconnectConnection(connId, confirm);
 }
 private void doLookup(Scanner sc) {
 

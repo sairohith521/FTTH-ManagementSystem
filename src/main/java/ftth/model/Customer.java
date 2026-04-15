@@ -14,9 +14,6 @@ public class Customer {
     private long planId;
     private int pincode;
 
-
-
-    // 🔹 Default Constructor
     public Customer() {
     }
 
@@ -50,6 +47,14 @@ public void setPincode(int pincode) {
     }
     public void setPlanId(long planId) {
         this.planId = planId;
+    }
+
+    public int getPincode() {
+        return pincode;
+    }
+
+    public void setPincode(int pincode) {
+        this.pincode = pincode;
     }
 
     public void setCustomerId(long customerId) {

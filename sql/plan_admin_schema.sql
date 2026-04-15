@@ -1,11 +1,8 @@
 CREATE DATABASE IF NOT EXISTS testdb;
 USE testdb;
 
-DROP TABLE IF EXISTS plan_admin;
-
-CREATE TABLE plan_admin (
+CREATE TABLE IF NOT EXISTS plan_admin (
     plan_id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    plan_code VARCHAR(30) NOT NULL UNIQUE,
     plan_name VARCHAR(100) NOT NULL,
     speed VARCHAR(40) NOT NULL,
     data_limit VARCHAR(100) NOT NULL,

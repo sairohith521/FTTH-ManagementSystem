@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import ftth.model.Customer;
 import ftth.model.Plan;
+import ftth.repository.CustomerConnectionRepository;
 import ftth.repository.CustomerRepository;
 import ftth.util.InputUtil;
 
@@ -15,6 +16,8 @@ public class CustomerConnectionService {
     private PlanService planService;
     private CustomerRepository customerRepo;
 
+    private CustomerConnectionRepository connectionRepo;
+
 
     public CustomerConnectionService(FTTH ftth,CustomerRepository customerRepo,
                                      EmailService email,
@@ -25,6 +28,7 @@ public class CustomerConnectionService {
         this.inventoryService = inventoryService;
         this.planService = planService;
         this.customerRepo=customerRepo;
+        this.connectionRepo = new CustomerConnectionRepository();
     }
 
     public void addCustomer(String name, Long planId,
@@ -204,6 +208,36 @@ public void disconnectCustomer(String custID, boolean confirm) {
     } else {
         System.out.println("Disconnect failed.");
     }
+}
+public void disconnectConnection(long connectionId, boolean confirm) {
+    String[] conn = connectionRepo.findConnection(connectionId);
+    if (conn == null) {
+        System.out.println("Connection not found.");
+        return;
+    }
+    if ("DISCONNECTED".equals(conn[5])) {
+        System.out.println("Connection is already disconnected.");
+        return;
+    }
+    System.out.println("Customer : " + conn[1]);
+    System.out.println("Pincode  : " + conn[2]);
+    System.out.println("Plan     : " + conn[3] + " @ Rs." + conn[4]);
+    System.out.println("Port     : " + conn[6] + "/Spl" + conn[7] + "/Port" + conn[8]);
+
+    if (!confirm) return;
+
+    boolean ok = connectionRepo.disconnectCustomer(connectionId);
+    if (ok) {
+        System.out.println("Connection " + connectionId + " disconnected. Port is now free.");
+    } else {
+        System.out.println("Disconnect failed.");
+    }
+}
+public void listActiveConnections() {
+    connectionRepo.listActiveConnections();
+}
+public String[] findConnection(long connectionId) {
+    return connectionRepo.findConnection(connectionId);
 }
 public void listAllCustomers() {
     ftth.listAllCustomers();
