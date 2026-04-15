@@ -34,7 +34,7 @@ public class Application {
 
       public Application() {
         adminController = new AdminController(connectionService, inventoryService, planService, userManagerService);
-        csrController = new CSRController(connectionService);
+        csrController = new CSRController(connectionService,planService);
         maintController = new MaintController(inventoryService, planService);
     }
 

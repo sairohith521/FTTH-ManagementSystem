@@ -36,18 +36,31 @@ public class InventoryController {
             }
 
             try {
-                switch (ch) {
-                    case 1 -> viewInventorySummary();
-                    case 2 -> addOLTFlow();
-                    case 3 -> removeOLTFlow();
-                    case 4 -> splitterAddFlow();
-                    case 5 -> splitterRemoveFlow();
-                    case 6 -> viewOltDetailsFlow();
-                    case 7 -> {
-                        return;
-                    }
-                    default -> System.out.println("Enter valid choice");
-                }
+    switch (ch) {
+        case 1:
+            viewInventorySummary();
+            break;
+        case 2:
+            addOLTFlow();
+            break;
+        case 3:
+            removeOLTFlow();
+            break;
+        case 4:
+            splitterAddFlow();
+            break;
+        case 5:
+            splitterRemoveFlow();
+            break;
+        case 6:
+            viewOltDetailsFlow();
+            break;
+        case 7:
+            return;
+        default:
+            System.out.println("Enter valid choice");
+    }
+
             } catch (RuntimeException e) {
                 System.out.println("[ERROR] " + e.getMessage());
             }

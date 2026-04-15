@@ -12,8 +12,8 @@ public class CustomerRepository {
     public void save(Customer customer) {
 
         String sql = "INSERT INTO customers " +
-                "(customer_code, full_name, email, pincode, salary, status) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+                "(customer_code, full_name, email, salary, status) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = DbConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -21,9 +21,8 @@ public class CustomerRepository {
             ps.setString(1, customer.getCustomerCode());
             ps.setString(2, customer.getFullName());
             ps.setString(3, customer.getEmail());
-            ps.setInt(4, customer.getPincode());
-            ps.setDouble(5, customer.getSalary());
-            ps.setString(6, customer.getStatus());
+            ps.setDouble(4, customer.getSalary());
+            ps.setString(5, customer.getStatus());
 
             ps.executeUpdate();
 
@@ -65,41 +64,22 @@ public class CustomerRepository {
 
     return null;
 }
+public boolean updateCustomerPlan(String custCode, long planId) {
 
-    public Integer findPincodeByCustomerCode(String customerCode) {
-        String sql = "SELECT pincode FROM customers WHERE customer_code = ?";
+    String sql = "UPDATE customers SET plan_id = ? WHERE customer_code = ?";
 
-        try (Connection conn = DbConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+    try (Connection con = DbConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setString(1, customerCode);
+        ps.setLong(1, planId);
+        ps.setString(2, custCode);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt("pincode");
-                }
-            }
+        return ps.executeUpdate() > 0;
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
 
-    public boolean updatePincodeByCustomerCode(String customerCode, int newPincode) {
-        String sql = "UPDATE customers SET pincode = ? WHERE customer_code = ?";
-
-        try (Connection conn = DbConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, newPincode);
-            ps.setString(2, customerCode);
-            return ps.executeUpdate() > 0;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
+    return false;
+}
 }

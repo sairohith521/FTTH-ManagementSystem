@@ -1,6 +1,9 @@
 package ftth.controller;
 
+import java.util.List;
 import java.util.Scanner;
+
+import ftth.model.Plan;
 import ftth.service.*;
 import ftth.util.InputUtil;
 
@@ -82,22 +85,26 @@ public class AdminController {
 
     System.out.println("\n--- New Connection ---");
     System.out.println("Plans Available:");
-    System.out.println("  1. 300 MBPS, 60 GB/Month  -> Rs. 499");
-    System.out.println("  2. 500 MBPS, Unlimited    -> Rs. 1499");
-
+    // System.out.println("  1. 300 MBPS, 60 GB/Month  -> Rs. 499");
+    // System.out.println("  2. 500 MBPS, Unlimited    -> Rs. 1499");
+    List<Plan> plans = planService.getActivePlans();
+    for (Plan p : plans) {
+    System.out.println(p.getId() + ". " + p.getName()
+        + " | " + p.getSpeed()
+        + " | Rs." + p.getPrice());
+    }
     String name = InputUtil.readValidName(sc, "Enter Customer Name: ");
 
-    System.out.print("Which Service (1/2): ");
-    String choice = sc.nextLine();
+    long planId = InputUtil.readLong(sc, "Select Plan ID: ");
 
     int pincode = InputUtil.readInt(sc, "Enter Pincode: ");
     double salary = InputUtil.readDouble(sc, "Enter Salary: ");
 
     System.out.print("Confirm order? (y/n): ");
     boolean confirm = sc.nextLine().equalsIgnoreCase("y");
-
+    String gmail = InputUtil.readEmail(sc, "Enter your Email: ");
     // 🔥 call service
-    customerConnectionService.addCustomer(name, choice, pincode, salary, confirm);
+    customerConnectionService.addCustomer(name, planId, pincode, salary, confirm,gmail);
 }
 
     private void doMove(Scanner sc) {
@@ -107,30 +114,16 @@ public class AdminController {
     System.out.print("Enter Customer ID: ");
     String custID = sc.nextLine().trim().toUpperCase();
 
-    Integer currentPincode = customerConnectionService.getCustomerPincodeFromDb(custID);
-    if (currentPincode == null) {
-        System.out.println("Customer ID not found in DB.");
-        return;
-    }
-
-    System.out.println("Current Pincode: " + currentPincode);
-
     int newPin = InputUtil.readInt(sc, "Enter New Pincode: ");
 
-    if (newPin == currentPincode) {
-        System.out.println("Entered pincode is same as current pincode.");
-        return;
-    }
+    System.out.print("Confirm move? (y/n): ");
+    boolean confirm = sc.nextLine().equalsIgnoreCase("y");
 
-    boolean updated = customerConnectionService.updateCustomerPincodeInDb(custID, newPin);
-    if (updated) {
-        System.out.println("Customer " + custID + " moved successfully to pincode " + newPin + ".");
-    } else {
-        System.out.println("Move failed. Could not update pincode in DB.");
-    }
+    // 🔥 call service
+    customerConnectionService.moveCustomer(custID, newPin, confirm);
 }
 
-    private void doChange(Scanner sc) {
+   private void doChange(Scanner sc) {
 
     System.out.println("\n--- Change Service ---");
 
@@ -147,10 +140,9 @@ public class AdminController {
     System.out.print("Confirm change? (y/n): ");
     boolean confirm = sc.nextLine().equalsIgnoreCase("y");
 
-    // 🔥 call service
-    customerConnectionService.changePlan(custID, choice, confirm);
+    // 🔥 call service (UPDATED PARAM)
+    customerConnectionService.changePlan(custID, planId, confirm);
 }
-
    private void doDelete(Scanner sc) {
 
     System.out.println("\n--- Disconnect Customer ---");

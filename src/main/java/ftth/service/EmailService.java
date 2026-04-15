@@ -5,10 +5,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 public class EmailService {
 
-    private static final String API_TOKEN = System.getenv("MAILTRAP_API_TOKEN");
-    private static final String INBOX_ID = System.getenv("MAILTRAP_INBOX_ID");
+    private static final Dotenv dotenv = Dotenv.load();
+
+    private static final String API_TOKEN = dotenv.get("MAILTRAP_API_TOKEN");
+    private static final String INBOX_ID = dotenv.get("MAILTRAP_INBOX_ID");
 
     public void sendNoOLTEmail(int pincode) {
         String subject = "OLT Capacity Full - Pincode " + pincode;
