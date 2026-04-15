@@ -50,6 +50,7 @@ public class CustomerRepository {
             customer.setCustomerCode(rs.getString("customer_code"));
             customer.setFullName(rs.getString("full_name"));
             customer.setEmail(rs.getString("email"));
+            customer.setPincode(rs.getInt("pincode"));
             customer.setSalary(rs.getDouble("salary"));
             customer.setStatus(rs.getString("status"));
             customer.setCreatedAt(rs.getTimestamp("created_at"));

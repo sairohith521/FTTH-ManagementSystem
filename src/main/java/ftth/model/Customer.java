@@ -103,6 +103,7 @@ public class Customer {
                 ", customerCode='" + customerCode + '\'' +
                 ", fullName='" + fullName + '\'' +
                 ", email='" + email + '\'' +
+            ", pincode=" + pincode +
                 ", salary=" + salary +
                 ", status='" + status + '\'' +
                 ", createdAt=" + createdAt +

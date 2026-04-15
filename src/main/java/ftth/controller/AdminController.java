@@ -130,31 +130,12 @@ public class AdminController {
     System.out.print("Enter Customer ID: ");
     String custID = sc.nextLine().trim().toUpperCase();
 
-    // 🔹 Fetch plans from DB
-    List<Plan> plans = planService.getActivePlans();
+    System.out.println("Available Plans:");
+    System.out.println("  1. 300 MBPS, 60 GB/Month  -> Rs. 499");
+    System.out.println("  2. 500 MBPS, Unlimited    -> Rs. 1499");
 
-    if (plans.isEmpty()) {
-        System.out.println("No plans available.");
-        return;
-    }
-
-    // 🔹 Display plans
-    System.out.println("\nAvailable Plans:");
-    for (Plan p : plans) {
-        System.out.println(p.getId() + ". " + p.getName()
-                + " | " + p.getSpeed()
-                + " | Rs." + p.getPrice());
-    }
-
-    // 🔹 Take planId input
-    long planId = InputUtil.readLong(sc, "Select New Plan ID: ");
-
-    // 🔹 Validate selection
-    Plan selectedPlan = planService.findPlanById(planId);
-    if (selectedPlan == null) {
-        System.out.println("Invalid plan selected.");
-        return;
-    }
+    System.out.print("Select New Plan (1/2): ");
+    String choice = sc.nextLine();
 
     System.out.print("Confirm change? (y/n): ");
     boolean confirm = sc.nextLine().equalsIgnoreCase("y");
