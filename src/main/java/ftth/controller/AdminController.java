@@ -130,31 +130,35 @@ public class AdminController {
     System.out.print("Enter Customer ID: ");
     String custID = sc.nextLine().trim().toUpperCase();
 
-    System.out.println("Available Plans:");
-    System.out.println("  1. 300 MBPS, 60 GB/Month  -> Rs. 499");
-    System.out.println("  2. 500 MBPS, Unlimited    -> Rs. 1499");
 
-    System.out.print("Select New Plan (1/2): ");
-    String choice = sc.nextLine();
+    List<Plan> plans = planService.getActivePlans();
+    if (plans.isEmpty()) {
+        System.out.println("No plans available.");
+        return;
+    }
+    System.out.println("\nAvailable Plans:");
+    for (Plan p : plans) {
+        System.out.println(p.getId() + ". " + p.getName() + " | " + p.getSpeed() + " | Rs." + p.getPrice());
+    }
+
+    long planId = InputUtil.readLong(sc, "Select New Plan ID: ");
 
     System.out.print("Confirm change? (y/n): ");
     boolean confirm = sc.nextLine().equalsIgnoreCase("y");
 
-    // 🔥 call service (UPDATED PARAM)
     customerConnectionService.changePlan(custID, planId, confirm);
 }
    private void doDelete(Scanner sc) {
 
     System.out.println("\n--- Disconnect Customer ---");
+    customerConnectionService.listActiveConnections();
 
-    System.out.print("Enter Customer ID: ");
-    String custID = sc.nextLine().trim().toUpperCase();
+    long connId = InputUtil.readLong(sc, "Enter Connection ID to disconnect: ");
 
     System.out.print("Confirm disconnect? (y/n): ");
     boolean confirm = sc.nextLine().equalsIgnoreCase("y");
 
-    // 🔥 call service
-    customerConnectionService.disconnectCustomer(custID, confirm);
+    customerConnectionService.disconnectConnection(connId, confirm);
 }
 private void doLookup(Scanner sc) {
 
