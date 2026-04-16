@@ -118,6 +118,10 @@ public class InventoryController {
             System.out.println("[ERROR] Enter numeric splitter count.");
             return;
         }
+        if (split < 1 || split > service.getMaxSplitters()) {
+            System.out.println("[ERROR] Splitter count must be between 1 and " + service.getMaxSplitters() + ".");
+            return;
+        }
 
         String id = service.addOLT(pin, type, split);
         System.out.println();

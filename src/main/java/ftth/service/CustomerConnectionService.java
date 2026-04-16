@@ -33,7 +33,7 @@ public class CustomerConnectionService {
 
     public void addCustomer(String name, Long planId,
                         int pincode, double salary,
-                        boolean confirm,String gmail) {
+                        boolean confirm, String gmail, String oltType) {
 
 
 Plan selectedPlan = planService.findPlanById(planId);
@@ -72,20 +72,33 @@ if (ports <= 0) {
         return;
     }
 
-    if (!confirm) return;
+    if (!confirm) {
+        System.out.println("Cancelled.");
+        return;
+    }
 
-    // 🔥 NEW PART (DB SAVE)
+    // 🔥 DB SAVE
     Customer customer = new Customer();
-
-    String custID = "AAHA-" + System.currentTimeMillis(); // simple unique id
-
-    customer.setCustomerCode(custID);
     customer.setFullName(name);
     customer.setEmail(gmail);
     customer.setSalary(salary);
     customer.setStatus("ACTIVE");
     customer.setPlanId(planID);
-    customerRepo.save(customer);
+    customer.setPincode(pincode);
+    String custID = customerRepo.save(customer);
+
+    if (custID == null) {
+        System.out.println("Failed to save customer.");
+        return;
+    }
+
+    // 🔹 Assign port and create connection
+    long[] portInfo = inventoryService.assignAvailablePort(pincode, oltType);
+    if (portInfo == null) {
+        System.out.println("Failed to assign port. Customer saved but no connection created.");
+        return;
+    }
+    connectionRepo.createConnection(name, planID, portInfo[0], portInfo[1]);
 
     // 🔹 Billing logic (UNCHANGED)
     LocalDate orderDate = LocalDate.now();
@@ -103,37 +116,60 @@ if (ports <= 0) {
 
     // 🔹 Email (UNCHANGED)
     email.sendOrderConfirmationEmail(
-            "user@gmail.com", name, pincode, service, price);
+            gmail, name, pincode, service, price);
 }
-    public void moveCustomer(String custID, int newPin, boolean confirm) {
+    public void moveCustomer(String custID, int newPin, String oltType, boolean confirm) {
 
-    // 🔹 Find customer
-    String[] customer = ftth.findCustomer(custID);
+    // Find active connection from DB
+    String[] conn = connectionRepo.findActiveConnectionByCustomerCode(custID);
 
-    if (customer == null) {
-        System.out.println("Customer ID not found.");
+    if (conn == null) {
+        System.out.println("No active connection found for customer '" + custID + "'.");
         return;
     }
 
-    System.out.println("Current Pincode : " + customer[2]);
-    System.out.println("Current Port    : " +
-            customer[3] + "/" + customer[4] + "/Port" + customer[5]);
+    int currentPin = Integer.parseInt(conn[2]);
+    if (currentPin == newPin) {
+        System.out.println("Customer is already in pincode " + newPin + ".");
+        return;
+    }
 
-    // 🔹 Check new location
-    if (!ftth.checkPincode(newPin)) {
-        System.out.println("No available ports in pincode " + newPin);
+    System.out.println("Current Pincode : " + conn[2]);
+    System.out.println("Current OLT     : " + conn[10]);
+    System.out.println("Current Port    : " + conn[6] + "/Spl" + conn[7] + "/Port" + conn[8]);
+
+    if (!inventoryService.checkPincode(newPin)) {
+        System.out.println("Service NOT available in pincode " + newPin);
         email.sendNoOLTEmail(newPin);
         return;
     }
 
-    if (!confirm) return;
+    int available = inventoryService.getAvailablePorts(newPin);
+    if (available <= 0) {
+        System.out.println("No available ports in pincode " + newPin);
+        email.sendNoOLTEmail(newPin);
+        return;
+    }
+    System.out.println("Available ports in " + newPin + " : " + available);
 
-    // 🔹 Move logic
-    boolean moved = ftth.moveCustomer(custID, newPin);
+    if (!confirm) {
+        System.out.println("Cancelled.");
+        return;
+    }
+
+    long[] newPortInfo = inventoryService.assignAvailablePort(newPin, oltType);
+    if (newPortInfo == null) {
+        System.out.println("Failed to assign new port in pincode " + newPin + " for OLT type " + oltType + ".");
+        return;
+    }
+
+    long connectionId = Long.parseLong(conn[0]);
+    long oldPortId = Long.parseLong(conn[9]);
+
+    boolean moved = connectionRepo.moveConnection(connectionId, oldPortId, newPortInfo[0], newPortInfo[1]);
 
     if (moved) {
-        System.out.println("Customer " + custID +
-                " moved to pincode " + newPin + " successfully.");
+        System.out.println("Customer " + custID + " moved to pincode " + newPin + " successfully.");
     } else {
         System.out.println("Move failed.");
     }
@@ -141,72 +177,28 @@ if (ports <= 0) {
 public Customer getCustomer(String customerCode) {
     return customerRepo.findByCode(customerCode);
 }
+public String[] findActiveConnectionByCode(String customerCode) {
+    return connectionRepo.findActiveConnectionByCustomerCode(customerCode);
+}
+public Long getActivePlanId(String customerCode) {
+    return connectionRepo.findActivePlanIdByCustomerCode(customerCode);
+}
 public void changePlan(String custID, long planId, boolean confirm) {
 
-    // 🔹 Find customer from DB
-    Customer customer = customerRepo.findByCode(custID);
-
-    if (customer == null) {
-        System.out.println("Customer ID not found.");
+    if (!confirm) {
+        System.out.println("Cancelled.");
         return;
     }
 
-    // 🔹 Get current plan
-    Plan currentPlan = planService.findPlanById(customer.getPlanId());
+    boolean changed = connectionRepo.updateConnectionPlan(custID, planId);
 
-    if (currentPlan != null) {
-        System.out.println("Current Service : " 
-            + currentPlan.getName() + " @ Rs." + currentPlan.getPrice());
-    }
-
-    // 🔹 Get new plan from DB
     Plan newPlan = planService.findPlanById(planId);
-
-    if (newPlan == null) {
-        System.out.println("Invalid plan selected.");
-        return;
-    }
-
-    if (!confirm) return;
-
-    // 🔹 Update DB
-    boolean changed = customerRepo.updateCustomerPlan(custID, planId);
-
     if (changed) {
         System.out.println("\nService updated successfully.");
         System.out.println("New Plan : " + newPlan.getName());
         System.out.println("Price    : Rs." + newPlan.getPrice());
     } else {
-        System.out.println("Change failed.");
-    }
-}
-public void disconnectCustomer(String custID, boolean confirm) {
-
-    // 🔹 Find customer
-    String[] customer = ftth.findCustomer(custID);
-
-    if (customer == null) {
-        System.out.println("Customer ID not found.");
-        return;
-    }
-
-    // 🔹 Show details
-    System.out.println("Customer : " + customer[1]);
-    System.out.println("Pincode  : " + customer[2]);
-    System.out.println("Port     : " +
-            customer[3] + "/" + customer[4] + "/Port" + customer[5]);
-    System.out.println("Service  : " + customer[6]);
-
-    if (!confirm) return;
-
-    // 🔹 Disconnect logic
-    boolean deleted = ftth.deleteCustomer(custID);
-
-    if (deleted) {
-        System.out.println("Customer " + custID +
-                " disconnected. Port is now free.");
-    } else {
-        System.out.println("Disconnect failed.");
+        System.out.println("Change failed. No active connection found for this customer.");
     }
 }
 public void disconnectConnection(long connectionId, boolean confirm) {
@@ -224,7 +216,10 @@ public void disconnectConnection(long connectionId, boolean confirm) {
     System.out.println("Plan     : " + conn[3] + " @ Rs." + conn[4]);
     System.out.println("Port     : " + conn[6] + "/Spl" + conn[7] + "/Port" + conn[8]);
 
-    if (!confirm) return;
+    if (!confirm) {
+        System.out.println("Cancelled.");
+        return;
+    }
 
     boolean ok = connectionRepo.disconnectCustomer(connectionId);
     if (ok) {

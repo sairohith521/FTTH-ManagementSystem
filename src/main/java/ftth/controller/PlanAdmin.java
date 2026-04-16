@@ -72,6 +72,19 @@ public class PlanAdmin {
 
         String olt = readOltType();
 
+        System.out.println("\n--- New Plan Summary ---");
+        System.out.println("Name      : " + name);
+        System.out.println("Speed     : " + speed);
+        System.out.println("Data      : " + data);
+        System.out.println("OTTs      : " + otts);
+        System.out.println("Price     : Rs." + price);
+        System.out.println("OLT Type  : " + olt);
+        System.out.print("Confirm add? (y/n): ");
+        if (!sc.nextLine().trim().equalsIgnoreCase("y")) {
+            System.out.println("Cancelled.");
+            return;
+        }
+
         Plan plan = new Plan(name, speed, data, otts, price, olt, true);
 
         boolean added = service.addPlan(plan);
@@ -104,6 +117,19 @@ public class PlanAdmin {
         double price = readDouble();
 
         String olt = readOltType();
+
+        System.out.println("\n--- Update Summary ---");
+        System.out.println("Name      : " + name);
+        System.out.println("Speed     : " + speed);
+        System.out.println("Data      : " + data);
+        System.out.println("OTTs      : " + otts);
+        System.out.println("Price     : Rs." + price);
+        System.out.println("OLT Type  : " + olt);
+        System.out.print("Confirm update? (y/n): ");
+        if (!sc.nextLine().trim().equalsIgnoreCase("y")) {
+            System.out.println("Cancelled.");
+            return;
+        }
 
         Plan updated = new Plan(id, name, speed, data, otts, price, olt, existing.isActive());
         boolean success = service.updatePlan(id, updated);

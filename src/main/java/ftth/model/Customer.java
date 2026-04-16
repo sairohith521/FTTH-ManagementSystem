@@ -36,25 +36,18 @@ public class Customer {
         return customerId;
     }
     public int getPincode() {
-    return pincode;
-}
-
-public void setPincode(int pincode) {
-    this.pincode = pincode;
-}
-    public long getPlanId() {
-        return planId;
-    }
-    public void setPlanId(long planId) {
-        this.planId = planId;
-    }
-
-    public int getPincode() {
         return pincode;
     }
 
     public void setPincode(int pincode) {
         this.pincode = pincode;
+    }
+
+    public long getPlanId() {
+        return planId;
+    }
+    public void setPlanId(long planId) {
+        this.planId = planId;
     }
 
     public void setCustomerId(long customerId) {
