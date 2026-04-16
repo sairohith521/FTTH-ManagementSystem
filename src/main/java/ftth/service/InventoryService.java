@@ -62,4 +62,12 @@ public class InventoryService {
 public int getAvailablePorts(int pincode) {
     return repo.getAvailablePorts(pincode);
 }
+
+public int getAvailablePortsByType(int pincode, String oltType) {
+    return repo.getAvailablePortsByType(pincode, oltType);
+}
+
+public long[] assignAvailablePort(int pincode, String oltType) {
+    return repo.assignAvailablePort(pincode, oltType);
+}
 }

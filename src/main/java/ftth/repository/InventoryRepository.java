@@ -453,6 +453,46 @@ public class InventoryRepository {
         }
         return 1;
     }
+    public long[] assignAvailablePort(int pincode, String oltType) {
+        String sql =
+            "SELECT p.port_id, sa.service_area_id " +
+            "FROM ports p " +
+            "JOIN splitters s ON s.splitter_id = p.splitter_id " +
+            "JOIN olts o ON o.olt_id = s.olt_id " +
+            "JOIN service_areas sa ON sa.service_area_id = o.service_area_id " +
+            "WHERE sa.pincode = ? AND o.olt_type = ? AND p.port_status = 'AVAILABLE' " +
+            "LIMIT 1";
+        String updateSql = "UPDATE ports SET port_status = 'ASSIGNED' WHERE port_id = ?";
+
+        try (Connection con = DbConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                long portId = -1, serviceAreaId = -1;
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ps.setString(1, String.valueOf(pincode));
+                    ps.setString(2, oltType);
+                    ResultSet rs = ps.executeQuery();
+                    if (!rs.next()) { con.rollback(); return null; }
+                    portId = rs.getLong("port_id");
+                    serviceAreaId = rs.getLong("service_area_id");
+                }
+                try (PreparedStatement ps = con.prepareStatement(updateSql)) {
+                    ps.setLong(1, portId);
+                    ps.executeUpdate();
+                }
+                con.commit();
+                return new long[]{portId, serviceAreaId};
+            } catch (SQLException e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error assigning port", e);
+        }
+    }
+
     public boolean existsByPincode(int pincode) {
 
     String sql = "SELECT COUNT(*) FROM service_areas WHERE pincode = ?";
@@ -487,6 +527,34 @@ public int getAvailablePorts(int pincode) {
          PreparedStatement ps = con.prepareStatement(sql)) {
 
         ps.setInt(1, pincode);
+
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1);
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return 0;
+}
+
+public int getAvailablePortsByType(int pincode, String oltType) {
+
+    String sql =
+        "SELECT COUNT(DISTINCT p.port_id) " +
+        "FROM ports p " +
+        "JOIN splitters s ON s.splitter_id = p.splitter_id " +
+        "JOIN olts o ON o.olt_id = s.olt_id " +
+        "JOIN service_areas sa ON sa.service_area_id = o.service_area_id " +
+        "WHERE sa.pincode = ? AND o.olt_type = ? AND p.port_status = 'AVAILABLE'";
+
+    try (Connection con = DbConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        ps.setString(1, String.valueOf(pincode));
+        ps.setString(2, oltType);
 
         ResultSet rs = ps.executeQuery();
         if (rs.next()) {

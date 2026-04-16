@@ -4,33 +4,49 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import java.sql.Statement;
+
 import ftth.model.Customer;
 import ftth.config.DbConnection;
 
 public class CustomerRepository {
 
-    public void save(Customer customer) {
+    public String save(Customer customer) {
 
         String sql = "INSERT INTO customers " +
-                "(customer_code, full_name, email, salary, status) " +
+                "(full_name, email, pincode, salary, status) " +
                 "VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = DbConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            ps.setString(1, customer.getCustomerCode());
-            ps.setString(2, customer.getFullName());
-            ps.setString(3, customer.getEmail());
+            ps.setString(1, customer.getFullName());
+            ps.setString(2, customer.getEmail());
+            ps.setInt(3, customer.getPincode());
             ps.setDouble(4, customer.getSalary());
             ps.setString(5, customer.getStatus());
 
             ps.executeUpdate();
 
-            System.out.println("✅ Customer inserted into DB");
+            ResultSet rs = ps.getGeneratedKeys();
+            if (rs.next()) {
+                long id = rs.getLong(1);
+                String custCode = String.format("AAHA-%04d", id);
+
+                try (PreparedStatement updatePs = conn.prepareStatement(
+                        "UPDATE customers SET customer_code = ? WHERE customer_id = ?")) {
+                    updatePs.setString(1, custCode);
+                    updatePs.setLong(2, id);
+                    updatePs.executeUpdate();
+                }
+
+                return custCode;
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return null;
     }
     public Customer findByCode(String customerCode) {
 
