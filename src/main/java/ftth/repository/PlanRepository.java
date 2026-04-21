@@ -14,6 +14,7 @@ public class PlanRepository {
 
     public boolean insertPlan(Plan plan) {
         String sql =
+<<<<<<< Updated upstream
             "INSERT INTO plan_admin " +
             "(plan_name, speed, data_limit, ott_count, price, olt_type, is_active) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -42,14 +43,16 @@ public class PlanRepository {
         String sql =
             "SELECT plan_id, plan_name, speed, data_limit, ott_count, price, olt_type, is_active " +
             "FROM plan_admin ORDER BY plan_id";
+=======
+            "SELECT plan_id, plan_code, plan_name, speed_label, data_limit_label, ott_count, monthly_price, olt_type, is_active, created_at " +
+            "FROM plans ORDER BY plan_id";
+>>>>>>> Stashed changes
 
         List<Plan> plans = new ArrayList<>();
         try (Connection con = DbConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                plans.add(toPlan(rs));
-            }
+            while (rs.next()) plans.add(toPlan(rs));
         } catch (SQLException e) {
             throw new RuntimeException("Error loading plans", e);
         }
@@ -76,16 +79,19 @@ public class PlanRepository {
 
     public Plan findPlanById(long id) {
         String sql =
+<<<<<<< Updated upstream
             "SELECT plan_id, plan_name, speed, data_limit, ott_count, price, olt_type, is_active " +
             "FROM plan_admin WHERE plan_id = ?";
+=======
+            "SELECT plan_id, plan_code, plan_name, speed_label, data_limit_label, ott_count, monthly_price, olt_type, is_active, created_at " +
+            "FROM plans WHERE plan_id = ?";
+>>>>>>> Stashed changes
 
         try (Connection con = DbConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return toPlan(rs);
-                }
+                if (rs.next()) return toPlan(rs);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error finding plan", e);

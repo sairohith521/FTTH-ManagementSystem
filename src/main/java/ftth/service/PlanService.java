@@ -44,8 +44,20 @@ public class PlanService {
             return;
         }
         System.out.println("---- ALL PLANS ----");
+        System.out.printf("%-6s | %-15s | %-10s | %-18s | %-5s | %-10s | %-8s | %-8s%n",
+            "ID", "Name", "Speed", "Data", "OTT", "Price", "OLT", "Status");
+        System.out.println("=".repeat(95));
         for (Plan p : plans) {
-            System.out.println(p);
+            System.out.printf("%-6d | %-15s | %-10s | %-18s | %-5d | %-10s | %-8s | %-8s%n",
+                p.getPlanId(),
+                p.getPlanName(),
+                p.getSpeedLabel(),
+                p.getDataLimitLabel(),
+                p.getOttCount(),
+                p.getMonthlyPrice(),
+                p.getOltType(),
+                p.isActive() ? "Active" : "Disabled"
+            );
         }
     }
 

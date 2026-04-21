@@ -15,7 +15,7 @@ public class ValidationUtil {
     public static boolean isValidSpeed(String speed) {
         if (speed == null) return false;
         try {
-            int val = Integer.parseInt(speed.trim());
+            double val = Double.parseDouble(speed.trim());
             return val > 0;
         } catch (NumberFormatException e) {
             return false;
@@ -26,7 +26,7 @@ public class ValidationUtil {
         if (data == null || data.isBlank()) return false;
         if (data.equalsIgnoreCase("unlimited")) return true;
         try {
-            int val = Integer.parseInt(data.trim());
+            double val = Double.parseDouble(data.trim());
             return val > 0;
         } catch (NumberFormatException e) {
             return false;
