@@ -18,6 +18,7 @@ public class Application {
            // ===============================
            // Repositories
            // ===============================
+        //   private final CapacityInventoryRepository capacityInventoryRepository;
            private final CustomerRepository customerRepository;
            private final CustomerConnectionRepository customerConnectionRepository;
            private final PlanRepository planRepository;
@@ -30,6 +31,7 @@ public class Application {
            // ===============================
            // Services
            // ===============================
+         //  private final CapacityService capacityService;
            private final PlanService planService;
            private final InventoryService inventoryService;
            private final EmailService emailService;
@@ -56,6 +58,7 @@ public class Application {
                // ---------- shared utilities ----------
                this.sc = new Scanner(System.in);
                // ---------- repositories ----------
+              // this.capacityInventoryRepository=new CapacityInventoryRepository();
                this.customerRepository = new CustomerRepository();
                this.customerConnectionRepository = new CustomerConnectionRepository();
                this.planRepository = new PlanRepository();
@@ -66,6 +69,7 @@ public class Application {
                this.userRepository = new UserRepository();
                this.roleRepository = new RoleRepository();
                // ---------- services ----------
+             //  this.capacityService=new CapacityService();
                this.planService = new PlanService(planRepository);
                this.customerService=new CustomerService(customerRepository);
                this.inventoryService = new InventoryService(inventoryRepository);

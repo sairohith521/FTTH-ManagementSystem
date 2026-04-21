@@ -109,15 +109,12 @@ private void doInventory(Scanner sc) {
 
     private void doCapacity(Scanner sc) {
 
+   // System.out.println("\n--- Capacity Dashboard ---");
+
     System.out.println("\n--- Capacity Dashboard ---");
-
-    int[] pincodes = {560001, 560002, 110001};
-
-    // 🔥 call service
-   
-
-    System.out.print("\nPress Enter to continue...");
-    sc.nextLine();
+      final CapacityService capacityService = new CapacityService();
+    
+       capacityService.showCapacityDashboard();
 }
 
    void doPlanAdmin(Scanner sc) {

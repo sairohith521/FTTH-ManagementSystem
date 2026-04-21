@@ -12,17 +12,17 @@ import ftth.model.Plan;
 import ftth.model.enums.EmailStatus;
 import ftth.model.enums.EmailType;
 import ftth.repository.EmailLogRepository;
-import io.github.cdimascio.dotenv.Dotenv;
+//import io.github.cdimascio.dotenv.Dotenv;
 
 public class EmailService {
     private final EmailLogRepository emailLogRepository;
     public EmailService(EmailLogRepository emailLogRepository){
         this.emailLogRepository=emailLogRepository;
     }
-    private static final Dotenv dotenv = Dotenv.load();
+   // private static final Dotenv dotenv = Dotenv.load();
 
-    private static final String API_TOKEN = dotenv.get("MAILTRAP_API_TOKEN");
-    private static final String INBOX_ID = dotenv.get("MAILTRAP_INBOX_ID");
+    private static final String API_TOKEN = "fhhf";
+    private static final String INBOX_ID = "cfg";
 
     public void sendNoOLTEmail(int pincode) {
         String subject = "OLT Capacity Full - Pincode " + pincode;

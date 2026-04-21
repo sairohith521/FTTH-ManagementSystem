@@ -6,25 +6,21 @@ import java.sql.SQLException;
 
 public final class DbConnection {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/testdb";
-    private static final String USER = "root";
-    private static final String PASSWORD = "Aaha@6598";
+    private static final String URL =
+        "jdbc:mysql://mysql-2e05bfbd-jaashish925-af58.e.aivencloud.com:28677/testdb"
+      + "?sslMode=REQUIRED";
 
-    static {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException(
-                "MySQL JDBC driver not found. Add mysql-connector-j to runtime classpath (example: -cp \"out;lib/*\").",
-                e
-            );
-        }
-    }
+    private static final String USER = "avnadmin";
+    private static final String PASSWORD = "AVNS_5yuCw7BefKFVh3jZMBq";
 
-    private DbConnection() {
-    }
+    private DbConnection() {}
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+        Connection con = DriverManager.getConnection(URL, USER, PASSWORD);
+
+        // ✅ LOG CONFIRMATION
+     //   System.out.println("[DB] ✅ Connected to MySQL at " + con.getMetaData().getURL());
+
+        return con;
     }
 }
