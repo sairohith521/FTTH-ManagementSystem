@@ -65,9 +65,39 @@ public class PlanAdmin {
         String data = readDataLimit();
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         System.out.print("Enter OTT Count: ");
         int otts = readInt();
 =======
+=======
+    if (plans.isEmpty()) {
+        System.out.println("No enabled plans available.");
+        return;
+    }
+
+    System.out.println("---- ENABLED PLANS ----");
+    System.out.printf(
+        "%-6s | %-15s | %-10s | %-18s | %-5s | %-10s | %-8s%n",
+        "ID", "Name", "Speed", "Data", "OTT", "Price", "OLT"
+    );
+    System.out.println("=".repeat(85));
+
+    for (Plan p : plans) {
+        System.out.printf(
+            "%-6d | %-15s | %-10s | %-18s | %-5d | %-10s | %-8s%n",
+            p.getPlanId(),
+            p.getPlanName(),
+            p.getSpeedLabel(),
+            p.getDataLimitLabel(),
+            p.getOttCount(),
+            p.getMonthlyPrice(),
+            p.getOltType()
+        );
+    }
+}
+private void addPlanFlow(User currUser) {
+
+>>>>>>> Stashed changes
     String planName = InputUtil.readPlanName(sc);
     String speedLabel = InputUtil.readSpeed(sc);
     String dataLimitLabel = InputUtil.readDataLimit(sc);
@@ -97,7 +127,13 @@ public class PlanAdmin {
     System.out.print("Enter Monthly Price: ");
     BigDecimal monthlyPrice = InputUtil.readBigDecimal(sc);
 
+<<<<<<< Updated upstream
     String oltType = InputUtil.readOltType(sc).toUpperCase();
+=======
+    String oltType = InputUtil.readOLTType(sc).toUpperCase();
+
+    String planCode = planName.trim().toUpperCase().replaceAll("\\s+", "_");
+>>>>>>> Stashed changes
 
     System.out.println("\n--- New Plan Summary ---");
     System.out.println("Name      : " + planName);
@@ -113,6 +149,7 @@ public class PlanAdmin {
         else       System.out.println("Failed to add plan.");
     }
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     private void updatePlanFlow() {
         service.viewActivePlans();
@@ -130,6 +167,10 @@ public class PlanAdmin {
 =======
     Plan plan = new Plan(null, planName, speedLabel, dataLimitLabel, ottCount, monthlyPrice, oltType, true);
     service.createPlan(plan);
+=======
+    Plan plan = new Plan(planName, speedLabel, dataLimitLabel, ottCount, monthlyPrice, oltType, true);
+    service.createPlan(plan, currUser);
+>>>>>>> Stashed changes
     System.out.println("Plan added successfully.");
 }
 
@@ -212,9 +253,21 @@ private void updatePlanFlow() {
         return;
     }
 
+<<<<<<< Updated upstream
     Plan updated = new Plan(existing.getPlanCode(), planName, speedLabel, dataLimitLabel, ottCount, monthlyPrice, oltType, existing.isActive());
     service.updatePlan(planId, updated);
     System.out.println("Plan updated successfully.");
+=======
+    // 5️⃣ Build updated Plan (KEEP planCode & active)
+    Plan updated = new Plan(
+        planName, speedLabel, dataLimitLabel, ottCount, monthlyPrice, oltType, existing.isActive()
+    );
+
+    // 6️⃣ Call service
+    service.updatePlan(planId, updated,currUser);
+
+    System.out.println("✅ Plan updated successfully.");
+>>>>>>> Stashed changes
 }
 
 private void togglePlanFlow() {
@@ -264,6 +317,7 @@ private void togglePlanFlow() {
         }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         System.out.println("Plan: " + plan);
         System.out.print("Are you sure you want to permanently delete '" + plan.getName() + "'? (y/n): ");
 =======
@@ -272,6 +326,21 @@ private void togglePlanFlow() {
             plan.getDataLimitLabel(), plan.getOttCount(),
             plan.getMonthlyPrice(), plan.getOltType());
         System.out.print("Are you sure? (y/n): ");
+>>>>>>> Stashed changes
+=======
+        System.out.println("\nYou are about to delete:");
+        System.out.printf("%-6s | %-15s | %-10s | %-18s | %-5s | %-10s | %-8s%n",
+            "ID", "Name", "Speed", "Data", "OTT", "Price", "OLT");
+        System.out.println("-".repeat(85));
+        System.out.printf("%-6d | %-15s | %-10s | %-18s | %-5d | %-10s | %-8s%n",
+            plan.getPlanId(),
+            plan.getPlanName(),
+            plan.getSpeedLabel(),
+            plan.getDataLimitLabel(),
+            plan.getOttCount(),
+            plan.getMonthlyPrice(),
+            plan.getOltType());
+        System.out.print("Are you sure you want to permanently delete '" + plan.getPlanName() + "'? (y/n): ");
 >>>>>>> Stashed changes
         if (!sc.nextLine().trim().equalsIgnoreCase("y")) {
             System.out.println("Cancelled.");

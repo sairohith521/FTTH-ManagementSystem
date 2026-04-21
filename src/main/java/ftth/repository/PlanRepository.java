@@ -9,9 +9,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.List;
 
 public class PlanRepository {
 
+<<<<<<< Updated upstream
     public boolean insertPlan(Plan plan) {
         String sql =
 <<<<<<< Updated upstream
@@ -45,6 +47,37 @@ public class PlanRepository {
             "FROM plan_admin ORDER BY plan_id";
 =======
             "SELECT plan_id, plan_code, plan_name, speed_label, data_limit_label, ott_count, monthly_price, olt_type, is_active, created_at " +
+=======
+public boolean insertPlan(Plan plan) {
+
+    String sql =
+        "INSERT INTO plans " +
+        "(plan_name, speed_label, data_limit_label, ott_count, " +
+        " monthly_price, olt_type, is_active) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+    try (Connection con = DbConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        ps.setString(1, plan.getPlanName());
+        ps.setString(2, plan.getSpeedLabel());
+        ps.setString(3, plan.getDataLimitLabel());
+        ps.setInt(4, plan.getOttCount());
+        ps.setBigDecimal(5, plan.getMonthlyPrice());
+        ps.setString(6, plan.getOltType());
+        ps.setBoolean(7, plan.isActive());
+
+        return ps.executeUpdate() > 0;
+
+    } catch (SQLException e) {
+        throw new RuntimeException("Error adding plan", e);
+    }
+}
+public List<Plan> findAllPlans() {
+        String sql =
+            "SELECT plan_id, plan_name, speed_label, data_limit_label, " +
+            "ott_count, monthly_price, olt_type, is_active, created_at " +
+>>>>>>> Stashed changes
             "FROM plans ORDER BY plan_id";
 >>>>>>> Stashed changes
 
@@ -77,6 +110,7 @@ public class PlanRepository {
         return plans;
     }
 
+<<<<<<< Updated upstream
     public Plan findPlanById(long id) {
         String sql =
 <<<<<<< Updated upstream
@@ -84,6 +118,38 @@ public class PlanRepository {
             "FROM plan_admin WHERE plan_id = ?";
 =======
             "SELECT plan_id, plan_code, plan_name, speed_label, data_limit_label, ott_count, monthly_price, olt_type, is_active, created_at " +
+=======
+public List<Plan> findActivePlans() {
+
+    String sql =
+        "SELECT plan_id, plan_name, speed_label, data_limit_label, " +
+        "ott_count, monthly_price, olt_type, is_active, created_at " +
+        "FROM plans " +
+        "WHERE is_active = TRUE " +
+        "ORDER BY plan_id";
+
+    List<Plan> plans = new ArrayList<>();
+
+    try (Connection con = DbConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+
+        while (rs.next()) {
+            plans.add(toPlan(rs));
+        }
+
+    } catch (SQLException e) {
+        throw new RuntimeException("Error loading active plans", e);
+    }
+
+    return plans;
+}
+
+public Plan findPlanById(long id) {
+        String sql =
+            "SELECT plan_id, plan_name, speed_label, data_limit_label, " +
+            "ott_count, monthly_price, olt_type, is_active, created_at " +
+>>>>>>> Stashed changes
             "FROM plans WHERE plan_id = ?";
 >>>>>>> Stashed changes
 
@@ -98,12 +164,28 @@ public class PlanRepository {
         }
         return null;
     }
+<<<<<<< Updated upstream
 
     public boolean updatePlan(long id, Plan updatedPlan) {
         String sql =
             "UPDATE plan_admin " +
             "SET plan_name = ?, speed = ?, data_limit = ?, ott_count = ?, price = ?, olt_type = ?, is_active = ? " +
             "WHERE plan_id = ?";
+=======
+private Plan toPlan(ResultSet rs) throws SQLException {
+    return new Plan(
+        rs.getLong("plan_id"),
+        rs.getString("plan_name"),
+        rs.getString("speed_label"),
+        rs.getString("data_limit_label"),
+        rs.getInt("ott_count"),
+        rs.getBigDecimal("monthly_price"),
+        rs.getString("olt_type"),
+        rs.getBoolean("is_active"),
+        rs.getTimestamp("created_at").toLocalDateTime()
+    );
+}
+>>>>>>> Stashed changes
 
         try (Connection con = DbConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -148,6 +230,7 @@ public class PlanRepository {
     public boolean togglePlanStatus(long id, boolean newStatus) {
         String sql = "UPDATE plan_admin SET is_active = ? WHERE plan_id = ?";
 
+<<<<<<< Updated upstream
         try (Connection con = DbConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setBoolean(1, newStatus);
@@ -155,6 +238,40 @@ public class PlanRepository {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error toggling plan status", e);
+=======
+    String sql = "UPDATE plans SET is_active = ? WHERE plan_id = ?";
+
+    try (Connection con = DbConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        ps.setBoolean(1, newStatus);
+        ps.setLong(2, planId);
+
+        return ps.executeUpdate() > 0;
+
+    } catch (SQLException e) {
+        throw new RuntimeException("Error toggling plan status for planId=" + planId, e);
+    }
+}
+   
+
+     private static final String FIND_BY_ID_SQL =
+    "SELECT plan_id, plan_name, speed_label, data_limit_label, " +
+    "ott_count, monthly_price, olt_type, is_active, created_at " +
+    "FROM plans WHERE plan_id = ?";
+
+public Plan findById(Long planId) {
+
+    try (Connection conn = DbConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(FIND_BY_ID_SQL)) {
+
+        ps.setLong(1, planId);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return toPlan(rs);   // ✅ use correct mapper
+            }
+>>>>>>> Stashed changes
         }
     }
 
