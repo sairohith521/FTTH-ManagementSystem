@@ -56,7 +56,7 @@ public class AdminController {
                 return false;
 
             case "9":
-                doPlanAdmin(sc);
+                doPlanAdmin(sc,currentUser);
                 return false;
 
             case "A":
@@ -120,8 +120,8 @@ private void doInventory(Scanner sc) {
     sc.nextLine();
 }
 
-   void doPlanAdmin(Scanner sc) {
-         planAdmin.handleMenu();
+   void doPlanAdmin(Scanner sc,User currentUser) {
+         planAdmin.handleMenu(currentUser);
     }
     private  void doUserMgmt(Scanner sc, User currentUser) {
         while (true) {

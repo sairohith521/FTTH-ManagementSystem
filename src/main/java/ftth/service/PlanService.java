@@ -1,6 +1,7 @@
 package ftth.service;
 
 import ftth.model.Plan;
+import ftth.model.User;
 import ftth.repository.PlanRepository;
 
 import java.util.List;
@@ -8,21 +9,28 @@ import java.util.List;
 public class PlanService {
 
     private final PlanRepository repo;
+    private final EmailService emailService;
 
-    public PlanService(PlanRepository repo) {
+    public PlanService(PlanRepository repo,EmailService emailService) {
         this.repo = repo;
+        this.emailService=emailService;
     }
 
 public boolean addPlan(Plan plan) {
         return repo.insertPlan(plan);
     }
-public void createPlan(Plan plan) {
+public void createPlan(Plan plan,User currUser) {
 
     boolean inserted = repo.insertPlan(plan);
 
     if (!inserted) {
         throw new RuntimeException("Plan creation failed");
     }
+    emailService.sendPlanAdminEmail(
+        "PLAN_ADDED",
+        plan,
+        currUser.getUserId()
+    );
 }
 
 public List<Plan> getAllPlans() {
@@ -67,7 +75,7 @@ public void viewAllPlans() {
         }
     }
 
-public void updatePlan(long planId, Plan updatedPlan) {
+public void updatePlan(long planId, Plan updatedPlan,User currUser) {
 
     Plan existingPlan = repo.findById(planId);
 
@@ -80,17 +88,33 @@ public void updatePlan(long planId, Plan updatedPlan) {
     if (!updated) {
         throw new RuntimeException("Plan update failed for id=" + planId);
     }
+    emailService.sendPlanAdminEmail(
+        "PLAN_UPDATED",
+        updatedPlan,
+        currUser.getUserId()
+    );
 }
 
-public boolean togglePlan(long id) {
+public boolean togglePlan(long id,User currUser) {
         Plan plan = repo.findPlanById(id);
         if (plan == null) return false;
         boolean newStatus = !plan.isActive();
-        return repo.togglePlanStatus(id, newStatus);
+        boolean toggled=repo.togglePlanStatus(id, newStatus);;
+        if(toggled){emailService.sendPlanAdminEmail( newStatus ? "PLAN_ACTIVATED" : "PLAN_DEACTIVATED", plan, currUser.getUserId());}
+        return toggled;
     }
 
-public boolean deletePlan(long id) {
-        return repo.deletePlan(id);
+public boolean deletePlan(long planId,User currUser) {
+    boolean deleted=repo.deletePlan(planId);
+    Plan plan = repo.findById(planId);
+    if (deleted) {
+        emailService.sendPlanAdminEmail(
+            "PLAN_DELETED",
+            plan,
+            currUser.getUserId()
+        );
+    }
+        return deleted;
     }
 
 public Plan getActivePlan(Long planId) {

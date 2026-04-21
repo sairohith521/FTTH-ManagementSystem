@@ -123,6 +123,7 @@ Bill bill = new Bill(
     //     selectedPlan.getPlanName(),
     //     selectedPlan.getMonthlyPrice()
     // );
+    email.sendConnectionConfirmation(customer, connection, selectedPlan);
 
   
 }
@@ -150,7 +151,8 @@ public void updateCustomerConnection(CustomerConnection connection,
     );
 
     // 5️⃣ (Optional) Send notification
-    // emailService.sendConnectionMovedEmail(connection);
+    Customer customer =customerRepo.findById(connection.getCustomerId());
+    email.sendCustomerMoveEmail(customer, connection,newPincode);
 }
 /**
  * Get active customer connection using customer code.
@@ -171,8 +173,7 @@ public void changePlan(Long connectionId,
     Plan newPlan = planService.getActivePlan(newPlanId);
 
     // 2️⃣ Ensure connection exists and is active
-    CustomerConnection connection =
-        connectionRepo.findById(connectionId);
+    CustomerConnection connection =connectionRepo.findById(connectionId);
 
     if (connection == null || !connection.isActive()) {
         throw new RuntimeException("Connection not active or not found");
@@ -186,7 +187,20 @@ public void changePlan(Long connectionId,
     );
 
     // 4️⃣ Optional: Notify customer
-    // emailService.sendPlanChangeEmail(connection, newPlan);
+    
+    Plan oldPlan =planService.findPlanById(connection.getPlanId());
+
+    // ✅ Get customer (needed for email)
+    Customer customer =customerRepo.findById(connection.getCustomerId());
+
+    
+    email.sendPlanChangeEmail(
+        customer,
+        connection,
+        oldPlan,
+        newPlan
+    );
+
 }
 public void disconnect(Long connectionId, Long currentUserId) {
 
@@ -213,7 +227,8 @@ public void disconnect(Long connectionId, Long currentUserId) {
     inventoryService.releasePort(connection.getPortId());
 
     // 4️⃣ Notify customer (optional)
-    // emailService.sendDisconnectEmail(connection);
+    Customer customer =customerRepo.findById(connection.getCustomerId());
+    email.sendDisconnectionEmail(customer, connection);;
 }
 
 
