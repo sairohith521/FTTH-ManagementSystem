@@ -1,8 +1,10 @@
 package ftth.controller;
+
 import ftth.model.Plan;
 import ftth.model.User;
 import ftth.service.PlanService;
-import ftth.util.InputUtil;
+import ftth.util.ValidationUtil;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Scanner;
@@ -11,9 +13,14 @@ public class PlanAdmin {
 
     private final PlanService service;
     private final Scanner sc;
-    public PlanAdmin(PlanService planService,Scanner sc) {
+
+    public PlanAdmin(PlanService planService, Scanner sc) {
         service = planService;
-        this.sc=sc;
+        this.sc = sc;
+    }
+
+    public void handleMenu() {
+        handleMenu(null);
     }
 
     public void handleMenu(User currUser) {
@@ -26,30 +33,22 @@ public class PlanAdmin {
                 System.out.println("4. Enable / Disable Plan");
                 System.out.println("5. Delete Plan");
                 System.out.println("6. Exit");
-
                 System.out.print("Enter choice: ");
 
                 if (!sc.hasNextLine()) return;
                 String input = sc.nextLine().trim();
                 int choice;
-                try {
-                    choice = Integer.parseInt(input);
-                } catch (NumberFormatException e) {
-                    System.out.println("Invalid choice.");
-                    continue;
-                }
+                try { choice = Integer.parseInt(input); }
+                catch (NumberFormatException e) { System.out.println("Invalid choice."); continue; }
 
                 switch (choice) {
-                    case 1: viewActivePlans(); break;
+                    case 1: service.viewActivePlans(); break;
                     case 2: addPlanFlow(currUser); break;
                     case 3: updatePlanFlow(currUser); break;
                     case 4: togglePlanFlow(currUser); break;
                     case 5: deletePlanFlow(currUser); break;
-                    case 6:
-                        System.out.println("Exiting...");
-                        return;
-                    default:
-                        System.out.println("Invalid choice");
+                    case 6: System.out.println("Exiting..."); return;
+                    default: System.out.println("Invalid choice");
                 }
             } catch (java.util.NoSuchElementException e) {
                 return;
@@ -58,208 +57,187 @@ public class PlanAdmin {
             }
         }
     }
-private void viewActivePlans() {
 
-    List<Plan> plans = service.getActivePlans();
+    private void addPlanFlow(User currUser) {
+        String planName = readPlanName();
+        String speedLabel = readSpeed();
+        String dataLimitLabel = readDataLimit();
 
-    if (plans.isEmpty()) {
-        System.out.println("No enabled plans available.");
-        return;
+        System.out.print("Enter OTT Count: ");
+        int ottCount = readInt();
+
+        System.out.print("Enter Monthly Price: ");
+        BigDecimal monthlyPrice = readBigDecimal();
+
+        String oltType = readOltType();
+
+        System.out.println("\n--- New Plan Summary ---");
+        System.out.printf("%-6s | %-15s | %-10s | %-15s | %-5s | %-10s | %-8s%n",
+            "ID", "Name", "Speed", "Data", "OTT", "Price", "OLT");
+        System.out.println("-".repeat(80));
+        System.out.printf("%-6s | %-15s | %-10s | %-15s | %-5d | %-10s | %-8s%n",
+            "NEW", planName, speedLabel, dataLimitLabel, ottCount, monthlyPrice, oltType);
+
+        System.out.print("\nConfirm add? (y/n): ");
+        if (!sc.nextLine().trim().equalsIgnoreCase("y")) { System.out.println("Cancelled."); return; }
+
+        Plan plan = new Plan(null, planName, speedLabel, dataLimitLabel, ottCount, monthlyPrice, oltType, true);
+        if (currUser != null) service.createPlan(plan, currUser);
+        else service.createPlan(plan);
+        System.out.println("Plan added successfully.");
     }
 
-    System.out.println("---- ENABLED PLANS ----");
-    System.out.printf(
-        "%-6s | %-15s | %-10s | %-18s | %-5s | %-10s | %-8s%n",
-        "ID", "Name", "Speed", "Data", "OTT", "Price", "OLT"
-    );
-    System.out.println("=".repeat(85));
+    private void updatePlanFlow(User currUser) {
+        service.viewActivePlans();
 
-    for (Plan p : plans) {
-        System.out.printf(
-            "%-6d | %-15s | %-10s | %-18s | %-5d | %-10s | %-8s%n",
-            p.getPlanId(),
-            p.getPlanName(),
-            p.getSpeedLabel(),
-            p.getDataLimitLabel(),
-            p.getOttCount(),
-            p.getMonthlyPrice(),
-            p.getOltType()
-        );
-    }
-}
-private void addPlanFlow(User currUser) {
+        System.out.print("\nEnter Plan ID to update: ");
+        long planId = readLong();
 
-    // 1️⃣ Read inputs
-    String planCode = InputUtil.readString(sc, "Enter Plan Code: ").toUpperCase();
-    String planName = InputUtil.readPlanName(sc);
-    String speedLabel = InputUtil.readSpeed(sc);
-    String dataLimitLabel = InputUtil.readDataLimit(sc);
+        Plan existing = service.findPlanById(planId);
+        if (existing == null) { System.out.println("Plan not found."); return; }
 
-    System.out.print("Enter OTT Count: ");
-    int ottCount = InputUtil.readInt(sc);
+        System.out.println("\nCurrent: " + existing.getPlanName()
+            + " | " + existing.getSpeedLabel()
+            + " | " + existing.getDataLimitLabel()
+            + " | OTTs:" + existing.getOttCount()
+            + " | Rs." + existing.getMonthlyPrice()
+            + " | " + existing.getOltType());
 
-    System.out.print("Enter Monthly Price: ");
-    BigDecimal monthlyPrice = InputUtil.readBigDecimal(sc); // ✅ BigDecimal
+        String planName = readPlanName();
+        String speedLabel = readSpeed();
+        String dataLimitLabel = readDataLimit();
 
-   String oltType = InputUtil.readOltType(sc).toUpperCase();
+        System.out.print("Enter new OTT Count: ");
+        int ottCount = readInt();
 
-    // 2️⃣ Show summary
-    System.out.println("\n--- New Plan Summary ---");
-    System.out.println("Code      : " + planCode);
-    System.out.println("Name      : " + planName);
-    System.out.println("Speed     : " + speedLabel);
-    System.out.println("Data      : " + dataLimitLabel);
-    System.out.println("OTTs      : " + ottCount);
-    System.out.println("Price     : Rs." + monthlyPrice);
-    System.out.println("OLT Type  : " + oltType);
+        System.out.print("Enter new Monthly Price: ");
+        BigDecimal monthlyPrice = readBigDecimal();
 
-    System.out.print("Confirm add? (y/n): ");
-    if (!sc.nextLine().trim().equalsIgnoreCase("y")) {
-        System.out.println("Cancelled.");
-        return;
+        String oltType = readOltType();
+
+        System.out.println("\n--- Update Summary ---");
+        System.out.printf("%-6s | %-15s | %-10s | %-15s | %-5s | %-10s | %-8s%n",
+            "ID", "Name", "Speed", "Data", "OTT", "Price", "OLT");
+        System.out.println("-".repeat(80));
+        System.out.printf("%-6d | %-15s | %-10s | %-15s | %-5d | %-10s | %-8s%n",
+            planId, planName, speedLabel, dataLimitLabel, ottCount, monthlyPrice, oltType);
+
+        System.out.print("\nConfirm update? (y/n): ");
+        if (!sc.nextLine().trim().equalsIgnoreCase("y")) { System.out.println("Cancelled."); return; }
+
+        Plan updated = new Plan(null, planName, speedLabel, dataLimitLabel, ottCount, monthlyPrice, oltType, existing.isActive());
+        if (currUser != null) service.updatePlan(planId, updated, currUser);
+        else service.updatePlan(planId, updated);
+        System.out.println("Plan updated successfully.");
     }
 
-    // 3️⃣ Create Plan object (FINAL MODEL)
-    Plan plan = new Plan(
-        planCode,
-        planName,
-        speedLabel,
-        dataLimitLabel,
-        ottCount,
-        monthlyPrice,
-        oltType,
-        true
-    );
-
-    // 4️⃣ Call service
-    service.createPlan(plan,currUser);
-
-    System.out.println("✅ Plan added successfully.");
-}
-
-private void updatePlanFlow(User currUser) {
-       // 1️⃣ Show active plans
-    service.printActivePlans(service.getActivePlans());
-
-    System.out.print("\nEnter Plan ID to update: ");
-    long planId = InputUtil.readLong(sc);
-
-    // 2️⃣ Fetch existing plan
-    Plan existing = service.findPlanById(planId);
-    if (existing == null) {
-        System.out.println("Plan not found.");
-        return;
-    }
-
-    System.out.println("\nCurrent Plan:");
-    System.out.println(existing.getPlanName()
-        + " | Speed: " + existing.getSpeedLabel()
-        + " | Data: " + existing.getDataLimitLabel()
-        + " | OTTs: " + existing.getOttCount()
-        + " | Rs." + existing.getMonthlyPrice()
-        + " | OLT: " + existing.getOltType()
-    );
-
-    // 3️⃣ Read updated values
-    String planName = InputUtil.readPlanName(sc);
-    String speedLabel = InputUtil.readSpeed(sc);
-    String dataLimitLabel = InputUtil.readDataLimit(sc);
-
-    System.out.print("Enter new OTT Count: ");
-    int ottCount = InputUtil.readInt(sc);
-
-    System.out.print("Enter new Monthly Price: ");
-    BigDecimal monthlyPrice = InputUtil.readBigDecimal(sc); // ✅ BigDecimal
-
-    String oltType = InputUtil.readOLTType(sc);
-
-    // 4️⃣ Summary
-    System.out.println("\n--- Update Summary ---");
-    System.out.println("Name      : " + planName);
-    System.out.println("Speed     : " + speedLabel);
-    System.out.println("Data      : " + dataLimitLabel);
-    System.out.println("OTTs      : " + ottCount);
-    System.out.println("Price     : Rs." + monthlyPrice);
-    System.out.println("OLT Type  : " + oltType);
-
-    System.out.print("Confirm update? (y/n): ");
-    if (!sc.nextLine().trim().equalsIgnoreCase("y")) {
-        System.out.println("Cancelled.");
-        return;
-    }
-
-    // 5️⃣ Build updated Plan (KEEP planCode & active)
-    Plan updated = new Plan(
-        existing.getPlanCode(),        // plan_code unchanged
-        planName,
-        speedLabel,
-        dataLimitLabel,
-        ottCount,
-        monthlyPrice,
-        oltType,
-        existing.isActive()
-    );
-
-    // 6️⃣ Call service
-    service.updatePlan(planId, updated,currUser);
-
-    System.out.println("✅ Plan updated successfully.");
-}
-
-private void togglePlanFlow(User currUser) {
+    private void togglePlanFlow(User currUser) {
         service.viewAllPlans();
 
         System.out.print("\nEnter Plan ID to Enable/Disable: ");
-        long id =InputUtil.readLong(sc);
+        long id = readLong();
 
         Plan plan = service.findPlanById(id);
-        if (plan == null) {
-            System.out.println("Plan not found.");
-            return;
-        }
+        if (plan == null) { System.out.println("Plan not found."); return; }
 
-        if (plan.isActive()) {
-            System.out.print("Plan '" + plan.getPlanName() + "' is currently ENABLED. Disable it? (y/n): ");
-        } else {
-            System.out.print("Plan '" + plan.getPlanName() + "' is currently DISABLED. Enable it? (y/n): ");
-        }
+        if (plan.isActive()) System.out.print("Plan '" + plan.getPlanName() + "' is ENABLED. Disable it? (y/n): ");
+        else                 System.out.print("Plan '" + plan.getPlanName() + "' is DISABLED. Enable it? (y/n): ");
 
-        String confirm = sc.nextLine().trim();
-        if (!confirm.equalsIgnoreCase("y")) {
-            System.out.println("Cancelled.");
-            return;
-        }
+        if (!sc.nextLine().trim().equalsIgnoreCase("y")) { System.out.println("Cancelled."); return; }
 
-        boolean success = service.togglePlan(id,currUser);
-        if (success) {
-            String newState = plan.isActive() ? "DISABLED" : "ENABLED";
-            System.out.println("Plan '" + plan.getPlanName() + "' is now " + newState + ".");
-        } else {
-            System.out.println("Failed to toggle plan status.");
-        }
-       
+        boolean success = currUser != null ? service.togglePlan(id, currUser) : service.togglePlan(id);
+        if (success) System.out.println("Plan '" + plan.getPlanName() + "' is now " + (plan.isActive() ? "DISABLED" : "ENABLED") + ".");
+        else         System.out.println("Failed to toggle plan status.");
     }
- private void deletePlanFlow(User currUser) {
+
+    private void deletePlanFlow(User currUser) {
         service.viewAllPlans();
 
         System.out.print("\nEnter Plan ID to delete: ");
-        long id = InputUtil.readLong(sc);
+        long id = readLong();
 
         Plan plan = service.findPlanById(id);
-        if (plan == null) {
-            System.out.println("Plan not found.");
-            return;
-        }
+        if (plan == null) { System.out.println("Plan not found."); return; }
 
-        System.out.println("Plan: " + plan);
-        System.out.print("Are you sure you want to permanently delete '" + plan.getPlanName() + "'? (y/n): ");
-        if (!sc.nextLine().trim().equalsIgnoreCase("y")) {
-            System.out.println("Cancelled.");
-            return;
-        }
+        System.out.println("\nYou are about to delete:");
+        System.out.printf("%-6s | %-15s | %-10s | %-15s | %-5s | %-10s | %-8s%n",
+            "ID", "Name", "Speed(MBPS)", "Data(GB)", "OTT", "Price", "OLT");
+        System.out.println("-".repeat(85));
+        System.out.printf("%-6d | %-15s | %-10s | %-15s | %-5d | %-10s | %-8s%n",
+            plan.getPlanId(), plan.getPlanName(), plan.getSpeedLabel(), plan.getDataLimitLabel(),
+            plan.getOttCount(), plan.getMonthlyPrice(), plan.getOltType());
 
-        boolean success = service.deletePlan(id,currUser);
+        System.out.print("\nAre you sure? (y/n): ");
+        if (!sc.nextLine().trim().equalsIgnoreCase("y")) { System.out.println("Cancelled."); return; }
+
+        boolean success = currUser != null ? service.deletePlan(id, currUser) : service.deletePlan(id);
         if (success) System.out.println("Plan '" + plan.getPlanName() + "' deleted permanently.");
         else         System.out.println("Failed to delete plan.");
+    }
+
+    // ── Input helpers ─────────────────────────────────────────────
+
+    private String readPlanName() {
+        while (true) {
+            System.out.print("Enter Plan Name: ");
+            String name = sc.nextLine().trim();
+            if (ValidationUtil.isValidPlanName(name)) return name;
+            System.out.println("Invalid name. Only letters, numbers and spaces (2-50 chars).");
+        }
+    }
+
+    private String readSpeed() {
+        while (true) {
+            System.out.print("Enter Speed (MBPS): ");
+            String val = sc.nextLine().trim().toUpperCase().replace("MBPS", "").trim();
+            if (ValidationUtil.isValidSpeed(val)) return val + "MBPS";
+            System.out.println("Invalid. Enter a number (e.g. 300, 56.78).");
+        }
+    }
+
+    private String readDataLimit() {
+        while (true) {
+            System.out.print("Enter Data Limit (GB) or 'Unlimited': ");
+            String val = sc.nextLine().trim();
+            String stripped = val.toUpperCase().replace("GB", "").trim();
+            if (val.equalsIgnoreCase("unlimited")) return "Unlimited";
+            if (ValidationUtil.isValidDataLimit(stripped)) return stripped + "GB";
+            System.out.println("Invalid. Enter a number (e.g. 60, 2.5) or 'Unlimited'.");
+        }
+    }
+
+    private String readOltType() {
+        while (true) {
+            System.out.println("Select OLT Type: [1] OLT300  [2] OLT500");
+            System.out.print("Choice: ");
+            String choice = sc.nextLine().trim();
+            if ("1".equals(choice)) return "OLT300";
+            if ("2".equals(choice)) return "OLT500";
+            System.out.println("Invalid. Enter 1 or 2.");
+        }
+    }
+
+    private int readInt() {
+        while (true) {
+            String v = sc.nextLine().trim();
+            try { return Integer.parseInt(v); }
+            catch (NumberFormatException e) { System.out.print("Enter a valid number: "); }
+        }
+    }
+
+    private long readLong() {
+        while (true) {
+            String v = sc.nextLine().trim();
+            try { return Long.parseLong(v); }
+            catch (NumberFormatException e) { System.out.print("Enter a valid id: "); }
+        }
+    }
+
+    private BigDecimal readBigDecimal() {
+        while (true) {
+            String v = sc.nextLine().trim();
+            try { return new BigDecimal(v); }
+            catch (NumberFormatException e) { System.out.print("Enter a valid amount: "); }
+        }
     }
 }
