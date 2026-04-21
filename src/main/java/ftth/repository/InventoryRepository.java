@@ -608,9 +608,61 @@ public Long findAvailablePortId(Long serviceAreaId, String oltType) {
         return result;
     }
 
-    // ✅ RESTORED — minimal stub to fix compilation
     public InventoryDetails findInventoryDetails(String oltCode) {
-        return null; // logic unchanged, just restores signature
+        String oltSql =
+            "SELECT olt_id, olt_code, service_area_id, olt_type, is_active, created_at " +
+            "FROM olts WHERE olt_code = ? AND is_active = TRUE";
+        String splitterSql =
+            "SELECT s.splitter_id, s.olt_id, s.splitter_code, s.splitter_number, s.is_active, s.created_at, " +
+            "COUNT(p.port_id) AS total_ports, " +
+            "COALESCE(SUM(CASE WHEN p.port_status = 'AVAILABLE' THEN 1 ELSE 0 END), 0) AS available_ports " +
+            "FROM splitters s " +
+            "LEFT JOIN ports p ON p.splitter_id = s.splitter_id " +
+            "WHERE s.olt_id = ? AND s.is_active = TRUE " +
+            "GROUP BY s.splitter_id, s.olt_id, s.splitter_code, s.splitter_number, s.is_active, s.created_at " +
+            "ORDER BY s.splitter_number";
+
+        try (Connection con = DbConnection.getConnection();
+             PreparedStatement oltPs = con.prepareStatement(oltSql)) {
+
+            oltPs.setString(1, oltCode);
+            try (ResultSet rs = oltPs.executeQuery()) {
+                if (!rs.next()) return null;
+
+                Olt olt = new Olt(
+                    rs.getLong("olt_id"),
+                    rs.getString("olt_code"),
+                    rs.getLong("service_area_id"),
+                    rs.getString("olt_type"),
+                    rs.getBoolean("is_active"),
+                    rs.getTimestamp("created_at").toLocalDateTime()
+                );
+
+                InventoryDetails details = new InventoryDetails(olt);
+
+                try (PreparedStatement splPs = con.prepareStatement(splitterSql)) {
+                    splPs.setLong(1, olt.getOltId());
+                    try (ResultSet srs = splPs.executeQuery()) {
+                        while (srs.next()) {
+                            Splitter sp = new Splitter(
+                                srs.getLong("splitter_id"),
+                                srs.getLong("olt_id"),
+                                srs.getString("splitter_code"),
+                                srs.getInt("splitter_number"),
+                                srs.getBoolean("is_active"),
+                                srs.getTimestamp("created_at").toLocalDateTime()
+                            );
+                            sp.setTotalPorts(srs.getInt("total_ports"));
+                            sp.setAvailablePorts(srs.getInt("available_ports"));
+                            details.addSplitter(sp);
+                        }
+                    }
+                }
+                return details;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error loading inventory details for " + oltCode, e);
+        }
     }
 
     public long[] assignAvailablePort(Long pincode, String oltType) {

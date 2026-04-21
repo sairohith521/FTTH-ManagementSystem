@@ -72,22 +72,28 @@ public class InventoryController {
 
         List<String> pins = service.getUniquePincodes();
 
-        for (String pin : pins) {
-            System.out.println("Pincode: " + pin);
+        System.out.println("\n=== Inventory Summary ===");
+        System.out.printf("%-10s %-20s %-10s %-12s %-15s%n",
+            "Pincode", "OLT Code", "Type", "Splitters", "Ports (Avail/Total)");
+        System.out.println("-".repeat(70));
 
+        for (String pin : pins) {
             List<OltInventoryDTO> list = service.getByPincode(pin);
 
             if (list.isEmpty()) {
-                System.out.println("  No OLTs found");
+                System.out.printf("%-10s %-20s%n", pin, "No OLTs found");
             } else {
                 for (OltInventoryDTO o : list) {
-                    System.out.println(o.getOltCode()
-                        + " | " + o.getOltType()
-                        + " | " + o.getAvailablePorts()
-                        + "/" + o.getTotalPorts());
+                    System.out.printf("%-10s %-20s %-10s %-12d %-15s%n",
+                        pin,
+                        o.getOltCode(),
+                        o.getOltType(),
+                        o.getSplitterCount(),
+                        o.getAvailablePorts() + "/" + o.getTotalPorts() + " available");
                 }
             }
         }
+        System.out.println();
     }
 
     private void addOLTFlow() {
@@ -258,21 +264,13 @@ private void splitterRemoveFlow() {
         return;
     }
 
-    //// 6️⃣ Show splitters and port availability (CORRECT WAY)
-for (Splitter splitter : details.getSplitters()) {
-
-    int totalPorts = service.getPortsPerSplitter();
-    int availablePorts =
-        service.getAvailablePortsByType(
-            details.getOlt().getServiceAreaId(),
-            details.getOlt().getOltType()
+    for (Splitter splitter : details.getSplitters()) {
+        System.out.println(
+            "Splitter " + splitter.getSplitterNumber()
+            + " | Ports: " + splitter.getAvailablePorts()
+            + "/" + splitter.getTotalPorts() + " available"
         );
-
-    System.out.println(
-        "Splitter " + splitter.getSplitterNumber()
-        + " | Ports: " + availablePorts + "/" + totalPorts + " available"
-    );
-}
+    }
 
 
     // 7️⃣ Read splitter number
@@ -296,48 +294,61 @@ for (Splitter splitter : details.getSplitters()) {
 }
 private void viewOltDetailsFlow() {
 
-    System.out.print("Enter OLT ID: ");
+    System.out.print("Enter Pincode: ");
+    String pin = sc.nextLine().trim();
+
+    List<OltInventoryDTO> list = service.getByPincode(pin);
+    if (list.isEmpty()) {
+        System.out.println("No OLTs found for pincode " + pin + ".");
+        return;
+    }
+
+    System.out.println("\n--- OLTs in Pincode " + pin + " ---");
+    System.out.printf("%-5s %-20s %-10s %-12s %-15s%n",
+        "#", "OLT Code", "Type", "Splitters", "Ports (Avail/Total)");
+    System.out.println("-".repeat(65));
+    for (int i = 0; i < list.size(); i++) {
+        OltInventoryDTO o = list.get(i);
+        System.out.printf("%-5d %-20s %-10s %-12d %-15s%n",
+            (i + 1), o.getOltCode(), o.getOltType(),
+            o.getSplitterCount(),
+            o.getAvailablePorts() + "/" + o.getTotalPorts() + " available");
+    }
+
+    System.out.print("\nEnter OLT Code: ");
     String oltCode = sc.nextLine().trim();
 
-    // 1️⃣ Load inventory details
     InventoryDetails details = service.getInventoryDetails(oltCode);
     if (details == null) {
         System.out.println("OLT not found.");
         return;
     }
 
-    // 2️⃣ Print OLT summary (ONLY fields that exist)
     Olt olt = details.getOlt();
+    int totalPorts = details.getSplitters().size() * service.getPortsPerSplitter();
+    int availablePorts = service.getAvailablePortsByType(olt.getServiceAreaId(), olt.getOltType());
 
-    System.out.println("\n=== OLT Details ===");
-    System.out.println("OLT Code      : " + olt.getOltCode());
-    System.out.println("OLT Type      : " + olt.getOltType());
-    System.out.println("Splitter Count: " + details.getSplitters().size());
+    System.out.println("\n+---------------------------------------+");
+    System.out.println("|           OLT Details                 |");
+    System.out.println("+---------------------------------------+");
+    System.out.printf("| %-14s : %-20s|%n", "OLT Code", olt.getOltCode());
+    System.out.printf("| %-14s : %-20s|%n", "OLT Type", olt.getOltType());
+    System.out.printf("| %-14s : %-20d|%n", "Splitters", details.getSplitters().size());
+    System.out.printf("| %-14s : %-20s|%n", "Ports", availablePorts + "/" + totalPorts + " available");
+    System.out.printf("| %-14s : %-20s|%n", "Status", olt.isActive() ? "ACTIVE" : "INACTIVE");
+    System.out.println("+---------------------------------------+");
 
-    // ✅ Inventory counts via service (NOT OLT entity)
-    int availablePorts =
-        service.getAvailablePortsByType(
-            olt.getServiceAreaId(),
-            olt.getOltType()
-        );
-
-    int totalPorts =
-        details.getSplitters().size() * service.getPortsPerSplitter();
-
-    System.out.println(
-        "Ports         : " +
-        availablePorts + "/" + totalPorts + " available"
-    );
-
-    // 3️⃣ Print splitter info (NO ports list)
-    System.out.println("\n--- Splitter Details ---");
+    System.out.println("\n--- Splitter Breakdown ---");
+    System.out.printf("%-12s %-22s %-18s%n", "Splitter #", "Code", "Ports");
+    System.out.println("-".repeat(55));
     for (Splitter splitter : details.getSplitters()) {
-        System.out.println(
-            "Splitter " + splitter.getSplitterNumber() +
-            " | Ports per splitter: " +
-            service.getPortsPerSplitter()
-        );
+        System.out.printf("%-12d %-22s %d/%d available%n",
+            splitter.getSplitterNumber(),
+            splitter.getSplitterCode() != null ? splitter.getSplitterCode() : "-",
+            splitter.getAvailablePorts(),
+            splitter.getTotalPorts());
     }
+    System.out.println();
 }
 }
 
