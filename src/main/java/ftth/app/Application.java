@@ -66,10 +66,10 @@ public class Application {
                this.userRepository = new UserRepository();
                this.roleRepository = new RoleRepository();
                // ---------- services ----------
-               this.planService = new PlanService(planRepository);
+               this.emailService = new EmailService(emailLogRepository);
+               this.planService = new PlanService(planRepository,emailService);
                this.customerService=new CustomerService(customerRepository);
                this.inventoryService = new InventoryService(inventoryRepository);
-               this.emailService = new EmailService(emailLogRepository);
                this.userManagerService = new UserManagerService(userRepository,roleRepository);
                this.serviceAreaService=new ServiceAreaService(serviceAreaRepository);
                this.billService=new BillService(billRepository);

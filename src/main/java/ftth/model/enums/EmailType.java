@@ -7,5 +7,8 @@ public enum EmailType {
     ORDER_CONFIRMATION,
     BILL,
     OLT_ALERT,
-    DISCONNECT
+    DISCONNECT,
+    SERVICE_MOVE,
+    PLAN_CHANGE,
+    PLAN_ADMIN
 }

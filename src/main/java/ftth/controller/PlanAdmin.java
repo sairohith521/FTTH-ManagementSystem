@@ -1,5 +1,6 @@
 package ftth.controller;
 import ftth.model.Plan;
+import ftth.model.User;
 import ftth.service.PlanService;
 import ftth.util.InputUtil;
 import java.math.BigDecimal;
@@ -15,7 +16,7 @@ public class PlanAdmin {
         this.sc=sc;
     }
 
-    public void handleMenu() {
+    public void handleMenu(User currUser) {
         while (true) {
             try {
                 System.out.println("\n--- PLAN ADMIN MENU ---");
@@ -40,10 +41,10 @@ public class PlanAdmin {
 
                 switch (choice) {
                     case 1: viewActivePlans(); break;
-                    case 2: addPlanFlow(); break;
-                    case 3: updatePlanFlow(); break;
-                    case 4: togglePlanFlow(); break;
-                    case 5: deletePlanFlow(); break;
+                    case 2: addPlanFlow(currUser); break;
+                    case 3: updatePlanFlow(currUser); break;
+                    case 4: togglePlanFlow(currUser); break;
+                    case 5: deletePlanFlow(currUser); break;
                     case 6:
                         System.out.println("Exiting...");
                         return;
@@ -57,7 +58,7 @@ public class PlanAdmin {
             }
         }
     }
-    private void viewActivePlans() {
+private void viewActivePlans() {
 
     List<Plan> plans = service.getActivePlans();
 
@@ -86,7 +87,7 @@ public class PlanAdmin {
         );
     }
 }
-    private void addPlanFlow() {
+private void addPlanFlow(User currUser) {
 
     // 1️⃣ Read inputs
     String planCode = InputUtil.readString(sc, "Enter Plan Code: ").toUpperCase();
@@ -131,12 +132,12 @@ public class PlanAdmin {
     );
 
     // 4️⃣ Call service
-    service.createPlan(plan);
+    service.createPlan(plan,currUser);
 
     System.out.println("✅ Plan added successfully.");
 }
 
-private void updatePlanFlow() {
+private void updatePlanFlow(User currUser) {
        // 1️⃣ Show active plans
     service.printActivePlans(service.getActivePlans());
 
@@ -200,12 +201,12 @@ private void updatePlanFlow() {
     );
 
     // 6️⃣ Call service
-    service.updatePlan(planId, updated);
+    service.updatePlan(planId, updated,currUser);
 
     System.out.println("✅ Plan updated successfully.");
 }
 
-private void togglePlanFlow() {
+private void togglePlanFlow(User currUser) {
         service.viewAllPlans();
 
         System.out.print("\nEnter Plan ID to Enable/Disable: ");
@@ -229,16 +230,16 @@ private void togglePlanFlow() {
             return;
         }
 
-        boolean success = service.togglePlan(id);
+        boolean success = service.togglePlan(id,currUser);
         if (success) {
             String newState = plan.isActive() ? "DISABLED" : "ENABLED";
             System.out.println("Plan '" + plan.getPlanName() + "' is now " + newState + ".");
         } else {
             System.out.println("Failed to toggle plan status.");
         }
+       
     }
-
-    private void deletePlanFlow() {
+ private void deletePlanFlow(User currUser) {
         service.viewAllPlans();
 
         System.out.print("\nEnter Plan ID to delete: ");
@@ -257,7 +258,7 @@ private void togglePlanFlow() {
             return;
         }
 
-        boolean success = service.deletePlan(id);
+        boolean success = service.deletePlan(id,currUser);
         if (success) System.out.println("Plan '" + plan.getPlanName() + "' deleted permanently.");
         else         System.out.println("Failed to delete plan.");
     }
