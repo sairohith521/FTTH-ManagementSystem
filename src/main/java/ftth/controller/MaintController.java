@@ -7,12 +7,10 @@ import ftth.model.User;
 public class MaintController {
     private final PlanAdmin planAdmin;
     private final InventoryController inventoryController;
-    private final CapacityService capacityService;
     // 🔹 Constructor (Dependency Injection)
-    public MaintController(InventoryController inventoryController,PlanAdmin planAdmin,CapacityService capacityService) {
+    public MaintController(InventoryController inventoryController,PlanAdmin planAdmin) {
         this.planAdmin=planAdmin;
         this.inventoryController=inventoryController;
-        this.capacityService=capacityService;
     }
 
     // 🔹 MAIN HANDLER (NO STATIC ❌)
@@ -66,7 +64,14 @@ public class MaintController {
     private void doCapacity(Scanner sc) {
 
     System.out.println("\n--- Capacity Dashboard ---");
-       capacityService.showCapacityDashboard();
+
+    int[] pincodes = {560001, 560002, 110001};
+
+    // 
+    // i
+
+    System.out.print("\nPress Enter to continue...");
+    sc.nextLine();
 }
 
      void doPlanAdmin(Scanner sc,User currUser) {

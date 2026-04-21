@@ -9,16 +9,14 @@ public class AdminController {
     private final CustomerScreenController customerScreenController;
     private final CustomerConnectionController customerConnectionController;
     private final InventoryController inventoryController;
-    private final CapacityService capacityService;
 
     // 🔹 Constructor (Dependency Injection)
-    public AdminController(InventoryController inventoryController,PlanAdmin planAdmin,CustomerScreenController customerScreenController,CustomerConnectionController customerConnectionController,UserManagerService userManagerService,CapacityService  capacityService){
+    public AdminController(InventoryController inventoryController,PlanAdmin planAdmin,CustomerScreenController customerScreenController,CustomerConnectionController customerConnectionController,UserManagerService userManagerService){
         this.um=userManagerService;
         this.customerScreenController = customerScreenController;
         this.customerConnectionController=customerConnectionController;
         this.planAdmin=planAdmin;
         this.inventoryController=inventoryController;
-        this.capacityService=capacityService;
     }
 
     // 🔹 MAIN HANDLER (NO STATIC ❌)
@@ -112,7 +110,14 @@ private void doInventory(Scanner sc) {
     private void doCapacity(Scanner sc) {
 
     System.out.println("\n--- Capacity Dashboard ---");
-       capacityService.showCapacityDashboard();
+
+    int[] pincodes = {560001, 560002, 110001};
+
+    // 🔥 call service
+   
+
+    System.out.print("\nPress Enter to continue...");
+    sc.nextLine();
 }
 
    void doPlanAdmin(Scanner sc,User currentUser) {

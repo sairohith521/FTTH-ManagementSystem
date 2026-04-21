@@ -19,6 +19,10 @@ public class Splitter {
     private boolean active;            // is_active
     private LocalDateTime createdAt;   // created_at
 
+    // Transient fields (not in DB, used for display)
+    private int totalPorts;
+    private int availablePorts;
+
 
     // ===============================
     // Constructors
@@ -106,6 +110,21 @@ public class Splitter {
         this.createdAt = createdAt;
     }
 
+    public int getTotalPorts() {
+        return totalPorts;
+    }
+
+    public void setTotalPorts(int totalPorts) {
+        this.totalPorts = totalPorts;
+    }
+
+    public int getAvailablePorts() {
+        return availablePorts;
+    }
+
+    public void setAvailablePorts(int availablePorts) {
+        this.availablePorts = availablePorts;
+    }
 
     // ===============================
     // Domain helper methods
