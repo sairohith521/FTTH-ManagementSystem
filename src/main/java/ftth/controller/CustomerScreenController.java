@@ -1,22 +1,15 @@
 package ftth.controller;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 import ftth.service.*;
 import ftth.util.InputUtil;
-import ftth.controller.*;
 import ftth.model.*;
-import ftth.repository.CustomerRepository;
 public class CustomerScreenController {
     private final CustomerService customerService;
     private final BillService billService;
     private final EmailService emailService;
     private final CustomerConnectionService customerConnectionService;
     private final PlanService planService;
-
-    private InventoryService inventoryService;
-    private CustomerRepository customerRepo;
-
     public CustomerScreenController(CustomerService customerService,BillService billService,EmailService emailService,PlanService planService,CustomerConnectionService customerConnectionService) {
         this.customerService = customerService;
         this.billService = billService;

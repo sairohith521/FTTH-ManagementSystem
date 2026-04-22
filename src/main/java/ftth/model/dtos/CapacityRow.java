@@ -1,4 +1,4 @@
-package ftth.model.dto;
+package ftth.model.dtos;
 
 public class CapacityRow {
 

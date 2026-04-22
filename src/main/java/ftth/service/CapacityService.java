@@ -16,44 +16,40 @@ public class CapacityService {
     }
 
     public void showCapacityDashboard() {
-
         List<CapacityRow> rows =
                 repo.fetchAllCapacity();
-
         if (rows.isEmpty()) {
             System.out.println("No inventory data found.");
             return;
         }
-
         List<String> alerts = new ArrayList<>();
 
         /* ===== ALERT LOGIC ===== */
         for (CapacityRow r : rows) {
+         if (r.getTotalPorts() == 0) continue;
 
-            if (r.totalPorts == 0) continue;
+    // Threshold breach (80–99%)
+    if (r.getUtilization() >= THRESHOLD && r.getUtilization() < 100.0) {
+        alerts.add(
+            "Capacity at " + r.getUtilization() + "% for " +
+            r.getOltType() + " OLT (pincode " + r.getPincode() + ")"
+        );
+    }
 
-            // Threshold breach (80–99%)
-            if (r.utilization >= THRESHOLD && r.utilization < 100.0) {
-                alerts.add(
-                    " Capacity at " + r.utilization + "% for " +
-                    r.oltType + " OLT (pincode " + r.pincode + ")"
-                );
-            }
-
-            // Fully exhausted
-            if (r.utilization == 100.0) {
-                if (r.splitterCount < MAX_SPLITTERS) {
-                    alerts.add(
-                        " Add SPLITTER to " + r.oltType +
-                        " OLT (pincode " + r.pincode + ")"
-                    );
-                } else {
-                    alerts.add(
-                        " Add NEW OLT at pincode " + r.pincode
-                    );
-                }
-            }
+    // Fully exhausted
+    if (r.getUtilization() == 100.0) {
+        if (r.getSplitterCount() < MAX_SPLITTERS) {
+            alerts.add(
+                "Add SPLITTER to " + r.getOltType() +
+                " OLT (pincode " + r.getPincode() + ")"
+            );
+        } else {
+            alerts.add(
+                "Add NEW OLT at pincode " + r.getPincode()
+            );
         }
+    }
+}
 
         /* ===== DASHBOARD ===== */
         System.out.println("\n=== Capacity Dashboard (Threshold: 80%) ===");
@@ -76,12 +72,20 @@ public class CapacityService {
         System.out.println("------------------------------------------------");
 
         for (CapacityRow r : rows) {
-            System.out.printf(
-                "%-8s %-8s %-6d %-6d %-6d %-6.1f%%%n",
-                r.pincode, r.oltType,
-                r.totalPorts, r.usedPorts,
-                r.freePorts, r.utilization
-            );
-        }
+          String pincode = r.getPincode();
+          String oltType = r.getOltType();
+          int totalPorts = r.getTotalPorts();
+          int usedPorts  = r.getUsedPorts();
+          int freePorts  = r.getFreePorts();
+          double util    = r.getUtilization();
+
+          System.out.printf(
+              "%-8s %-8s %-6d %-6d %-6d %-6.1f%%%n",
+              pincode, oltType,
+              totalPorts, usedPorts,
+              freePorts, util
+          );
+      }
+
     }
 }

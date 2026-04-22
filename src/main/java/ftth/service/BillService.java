@@ -2,13 +2,9 @@ package ftth.service;
 import java.time.LocalDate;
 import ftth.model.*;
 import ftth.model.enums.BillStatus;
-
 import java.math.BigDecimal;
-import java.sql.*;
 import ftth.repository.*;
 import ftth.util.BillUtil;
-
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class BillService {
