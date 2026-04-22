@@ -89,7 +89,6 @@ public class PlanAdmin {
     private void addPlanFlow() {
 
     // 1️⃣ Read inputs
-    String planCode = InputUtil.readString(sc, "Enter Plan Code: ").toUpperCase();
     String planName = InputUtil.readPlanName(sc);
     String speedLabel = InputUtil.readSpeed(sc);
     String dataLimitLabel = InputUtil.readDataLimit(sc);
@@ -104,7 +103,6 @@ public class PlanAdmin {
 
     // 2️⃣ Show summary
     System.out.println("\n--- New Plan Summary ---");
-    System.out.println("Code      : " + planCode);
     System.out.println("Name      : " + planName);
     System.out.println("Speed     : " + speedLabel);
     System.out.println("Data      : " + dataLimitLabel);
@@ -120,7 +118,6 @@ public class PlanAdmin {
 
     // 3️⃣ Create Plan object (FINAL MODEL)
     Plan plan = new Plan(
-        planCode,
         planName,
         speedLabel,
         dataLimitLabel,
@@ -187,9 +184,8 @@ private void updatePlanFlow() {
         return;
     }
 
-    // 5️⃣ Build updated Plan (KEEP planCode & active)
+    // 5️⃣ Build updated Plan (KEEP active)
     Plan updated = new Plan(
-        existing.getPlanCode(),        // plan_code unchanged
         planName,
         speedLabel,
         dataLimitLabel,
@@ -250,8 +246,14 @@ private void togglePlanFlow() {
             return;
         }
 
-        System.out.println("Plan: " + plan);
-        System.out.print("Are you sure you want to permanently delete '" + plan.getPlanName() + "'? (y/n): ");
+        System.out.println("\nPlan to delete:");
+        System.out.printf("  %-10s : %d%n", "ID", plan.getPlanId());
+        System.out.printf("  %-10s : %s%n", "Name", plan.getPlanName());
+        System.out.printf("  %-10s : %s%n", "Speed", plan.getSpeedLabel());
+        System.out.printf("  %-10s : %s%n", "Data", plan.getDataLimitLabel());
+        System.out.printf("  %-10s : Rs.%s%n", "Price", plan.getMonthlyPrice());
+        System.out.printf("  %-10s : %s%n", "OLT", plan.getOltType());
+        System.out.print("\nAre you sure you want to permanently delete '" + plan.getPlanName() + "'? (y/n): ");
         if (!sc.nextLine().trim().equalsIgnoreCase("y")) {
             System.out.println("Cancelled.");
             return;

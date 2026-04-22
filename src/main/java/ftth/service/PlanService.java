@@ -61,9 +61,24 @@ public void viewAllPlans() {
             System.out.println("No plans available.");
             return;
         }
-        System.out.println("---- ALL PLANS ----");
+        System.out.println("\n---- ALL PLANS ----");
+        System.out.printf(
+            "%-6s | %-15s | %-10s | %-18s | %-5s | %-10s | %-8s | %-8s%n",
+            "ID", "Name", "Speed", "Data", "OTT", "Price", "OLT", "Status"
+        );
+        System.out.println("=".repeat(100));
         for (Plan p : plans) {
-            System.out.println(p);
+            System.out.printf(
+                "%-6d | %-15s | %-10s | %-18s | %-5d | Rs.%-7s | %-8s | %-8s%n",
+                p.getPlanId(),
+                p.getPlanName(),
+                p.getSpeedLabel(),
+                p.getDataLimitLabel(),
+                p.getOttCount(),
+                p.getMonthlyPrice(),
+                p.getOltType(),
+                p.isActive() ? "ENABLED" : "DISABLED"
+            );
         }
     }
 
