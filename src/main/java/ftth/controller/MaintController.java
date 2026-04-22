@@ -31,7 +31,7 @@ public class MaintController {
                 return false;
 
             case "4":
-                doPlanAdmin(sc);
+                doPlanAdmin(sc,currUser);
                 return false;
 
             case "0":
@@ -74,7 +74,7 @@ public class MaintController {
     sc.nextLine();
 }
 
-     void doPlanAdmin(Scanner sc) {
-         planAdmin.handleMenu();
+     void doPlanAdmin(Scanner sc,User currUser) {
+         planAdmin.handleMenu(currUser);
     }
 }

@@ -73,7 +73,7 @@ public class CustomerRepository {
     throw new RuntimeException("Failed to generate customer ID");
 }
 
-     public Customer findByCustomerCode(String customerCode) {
+public Customer findByCustomerCode(String customerCode) {
 
        String sql =
         "SELECT c.customer_id, c.customer_code, c.full_name, " +
@@ -102,6 +102,39 @@ public class CustomerRepository {
 
         return null;
     }
+     public Customer findById(Long customerId) {
+
+    String sql =
+        "SELECT customer_id, customer_code, full_name, email, salary, status " +
+        "FROM customers " +
+        "WHERE customer_id = ?";
+
+    try (Connection con = DbConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        ps.setLong(1, customerId);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                Customer c = new Customer();
+                c.setCustomerId(rs.getLong("customer_id"));
+                c.setCustomerCode(rs.getString("customer_code"));
+                c.setFullName(rs.getString("full_name"));
+                c.setEmail(rs.getString("email"));
+                c.setSalary(rs.getBigDecimal("salary"));
+                c.setStatus(CustomerStatus.valueOf(rs.getString("status")));
+                return c;
+            }
+        }
+
+    } catch (SQLException e) {
+        throw new RuntimeException(
+            "Error fetching customer by id=" + customerId, e
+        );
+    }
+
+    return null;
+}
 
     // ✅ List all customers
     public List<Customer> findAll() {
