@@ -14,7 +14,6 @@ public class Plan {
     // ===============================
 
     private Long planId;                // plan_id (PK)
-    private String planCode;            // plan_code
     private String planName;            // plan_name
     private String speedLabel;          // speed_label
     private String dataLimitLabel;      // data_limit_label
@@ -34,14 +33,12 @@ public class Plan {
     }
 
     // Constructor for NEW plan (before DB insert)
-    public Plan(String planCode,
-                String planName,
+    public Plan(String planName,
                 String speedLabel,
                 String dataLimitLabel,
                 Integer ottCount,
                 BigDecimal monthlyPrice,
                 String oltType) {
-        this.planCode = planCode;
         this.planName = planName;
         this.speedLabel = speedLabel;
         this.dataLimitLabel = dataLimitLabel;
@@ -51,9 +48,25 @@ public class Plan {
         this.active = true;
     }
 
+    // Constructor for NEW plan with explicit active flag
+    public Plan(String planName,
+                String speedLabel,
+                String dataLimitLabel,
+                Integer ottCount,
+                BigDecimal monthlyPrice,
+                String oltType,
+                boolean active) {
+        this.planName = planName;
+        this.speedLabel = speedLabel;
+        this.dataLimitLabel = dataLimitLabel;
+        this.ottCount = ottCount;
+        this.monthlyPrice = monthlyPrice;
+        this.oltType = oltType;
+        this.active = active;
+    }
+
     // Full constructor (used when reading from DB)
     public Plan(Long planId,
-                String planCode,
                 String planName,
                 String speedLabel,
                 String dataLimitLabel,
@@ -63,7 +76,6 @@ public class Plan {
                 boolean active,
                 LocalDateTime createdAt) {
         this.planId = planId;
-        this.planCode = planCode;
         this.planName = planName;
         this.speedLabel = speedLabel;
         this.dataLimitLabel = dataLimitLabel;
@@ -73,25 +85,6 @@ public class Plan {
         this.active = active;
         this.createdAt = createdAt;
     }
-// ✅ Constructor for NEW plan creation
-public Plan(String planCode,
-            String planName,
-            String speedLabel,
-            String dataLimitLabel,
-            Integer ottCount,
-            BigDecimal monthlyPrice,
-            String oltType,
-            boolean active) {
-
-    this.planCode = planCode;
-    this.planName = planName;
-    this.speedLabel = speedLabel;
-    this.dataLimitLabel = dataLimitLabel;
-    this.ottCount = ottCount;
-    this.monthlyPrice = monthlyPrice;
-    this.oltType = oltType;
-    this.active = active;
-}
 
     // ===============================
     // Getters and Setters
@@ -103,14 +96,6 @@ public Plan(String planCode,
 
     public void setPlanId(Long planId) {
         this.planId = planId;
-    }
-
-    public String getPlanCode() {
-        return planCode;
-    }
-
-    public void setPlanCode(String planCode) {
-        this.planCode = planCode;
     }
 
     public String getPlanName() {
@@ -199,7 +184,6 @@ public Plan(String planCode,
     public String toString() {
         return "Plan{" +
                 "planId=" + planId +
-                ", planCode='" + planCode + '\'' +
                 ", planName='" + planName + '\'' +
                 ", speedLabel='" + speedLabel + '\'' +
                 ", dataLimitLabel='" + dataLimitLabel + '\'' +
