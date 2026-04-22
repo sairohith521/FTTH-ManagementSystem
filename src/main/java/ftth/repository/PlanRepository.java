@@ -24,7 +24,8 @@ public boolean insertPlan(Plan plan) {
     try (Connection con = DbConnection.getConnection();
          PreparedStatement ps = con.prepareStatement(sql)) {
 
-        ps.setString(1, plan.getPlanCode());                // ✅ required
+        String autoCode = plan.getPlanName().toUpperCase().replaceAll("\\s+", "_");
+        ps.setString(1, autoCode);
         ps.setString(2, plan.getPlanName());
         ps.setString(3, plan.getSpeedLabel());
         ps.setString(4, plan.getDataLimitLabel());
@@ -36,9 +37,8 @@ public boolean insertPlan(Plan plan) {
         return ps.executeUpdate() > 0;
 
     } catch (SQLIntegrityConstraintViolationException e) {
-        // duplicate plan_code
         System.out.println(
-            "Plan with code '" + plan.getPlanCode() + "' already exists."
+            "Plan with name '" + plan.getPlanName() + "' already exists."
         );
         return false;
 
@@ -48,7 +48,7 @@ public boolean insertPlan(Plan plan) {
 }
 public List<Plan> findAllPlans() {
         String sql =
-            "SELECT plan_id, plan_name, speed_label, data_limit_label, ott_count, monthly_price, olt_type, is_active " +
+            "SELECT plan_id, plan_name, speed_label, data_limit_label, ott_count, monthly_price, olt_type, is_active, created_at " +
             "FROM plans ORDER BY plan_id";
 
         List<Plan> plans = new ArrayList<>();
@@ -67,7 +67,7 @@ public List<Plan> findAllPlans() {
 public List<Plan> findActivePlans() {
 
     String sql =
-        "SELECT plan_id, plan_code, plan_name, speed_label, data_limit_label, " +
+        "SELECT plan_id, plan_name, speed_label, data_limit_label, " +
         "ott_count, monthly_price, olt_type, is_active, created_at " +
         "FROM plans " +
         "WHERE is_active = TRUE " +
@@ -92,7 +92,7 @@ public List<Plan> findActivePlans() {
 
 public Plan findPlanById(long id) {
         String sql =
-            "SELECT plan_id, plan_name, speed_label, data_limit_label, ott_count, monthly_price, olt_type, is_active " +
+            "SELECT plan_id, plan_name, speed_label, data_limit_label, ott_count, monthly_price, olt_type, is_active, created_at " +
             "FROM plans WHERE plan_id = ?";
 
         try (Connection con = DbConnection.getConnection();
@@ -112,12 +112,11 @@ private Plan toPlan(ResultSet rs) throws SQLException {
 
     return new Plan(
         rs.getLong("plan_id"),
-        rs.getString("plan_code"),
         rs.getString("plan_name"),
         rs.getString("speed_label"),
         rs.getString("data_limit_label"),
         rs.getInt("ott_count"),
-        rs.getBigDecimal("monthly_price"), // ✅ BigDecimal (not double)
+        rs.getBigDecimal("monthly_price"),
         rs.getString("olt_type"),
         rs.getBoolean("is_active"),
         rs.getTimestamp("created_at").toLocalDateTime()
@@ -197,7 +196,7 @@ public boolean togglePlanStatus(long planId, boolean newStatus) {
    
 
      private static final String FIND_BY_ID_SQL =
-    "SELECT plan_id, plan_code, plan_name, speed_label, data_limit_label, " +
+    "SELECT plan_id, plan_name, speed_label, data_limit_label, " +
     "ott_count, monthly_price, olt_type, is_active, created_at " +
     "FROM plans WHERE plan_id = ?";
 

@@ -98,8 +98,8 @@ public class CustomerScreenController {
             System.out.println("\nWhat would you like to do?");
             System.out.println("[1] Change Plan");
             System.out.println("[2] Move (New Pincode)");
-            System.out.println("[3] Disconnect");
-            System.out.println("[4] Generate Bill");
+            System.out.println("[3] Billing");
+            System.out.println("[4] Disconnect");
             System.out.println("[0] Back to Main Menu");
             System.out.print("Select Option: ");
 
@@ -119,12 +119,12 @@ public class CustomerScreenController {
                     break;
 
                 case "3":
-                    disconnectCustomer(sc, customer);
-                    back = true;
+                    billingMenu(sc, customer);
                     break;
 
                 case "4":
-                    // generateBill(sc, customer);
+                    disconnectCustomer(sc, customer);
+                    back = true;
                     break;
 
                 case "0":
@@ -322,17 +322,141 @@ private void disconnectCustomer(Scanner sc, Customer customer) {
     System.out.println("✅ Customer disconnected successfully.");
 }
 
-    // private void generateBill(Scanner sc, Customer customer) {
+    // ============================
+    // BILLING SUB-MENU
+    // ============================
+    private void billingMenu(Scanner sc, Customer customer) {
 
-    //     var bill = billService.generateMonthlyBill(customer);
+        boolean back = false;
+        while (!back) {
+            System.out.println("\n--- Billing ---");
+            System.out.println("[1] Generate Bill");
+            System.out.println("[2] View Bills");
+            System.out.println("[3] Mark Bill as Paid");
+            System.out.println("[4] Mark Bill as Overdue");
+            System.out.println("[0] Back");
+            System.out.print("Select Option: ");
 
-    //     billService.printBill(bill);
+            String opt = sc.nextLine().trim();
+            switch (opt) {
+                case "1": generateBill(sc, customer); break;
+                case "2": viewBills(customer); break;
+                case "3": markBillPaid(sc, customer); break;
+                case "4": markBillOverdue(sc, customer); break;
+                case "0": back = true; break;
+                default: System.out.println("Invalid option.");
+            }
+        }
+    }
 
-    //     System.out.print("Email bill? (y/n): ");
-    //     if (sc.nextLine().equalsIgnoreCase("y")) {
-    //         emailService.sendBillEmail(customer, bill);
-    //     }
-    // }
+    private void generateBill(Scanner sc, Customer customer) {
+
+        CustomerConnection connection =
+            customerConnectionService.getActiveConnectionByCustomerCode(
+                customer.getCustomerCode()
+            );
+
+        if (connection == null) {
+            System.out.println("No active connection found.");
+            return;
+        }
+
+        Plan plan = planService.findPlanById(connection.getPlanId());
+        if (plan == null) {
+            System.out.println("Plan not found.");
+            return;
+        }
+
+        System.out.println("\nPlan   : " + plan.getPlanName() + " @ Rs." + plan.getMonthlyPrice());
+        System.out.println("GST    : 18%");
+        System.out.print("Confirm bill generation? (y/n): ");
+        if (!sc.nextLine().equalsIgnoreCase("y")) {
+            System.out.println("Cancelled.");
+            return;
+        }
+
+        Bill bill = billService.generateMonthlyBill(
+            customer,
+            connection.getConnectionId(),
+            plan
+        );
+
+        billService.printBill(bill, customer);
+        System.out.println("Bill generated successfully.");
+    }
+
+    private void viewBills(Customer customer) {
+
+        List<Bill> bills = billService.getBillsForCustomer(customer.getCustomerId());
+
+        if (bills.isEmpty()) {
+            System.out.println("No bills found for this customer.");
+            return;
+        }
+
+        System.out.println("\n--- Bills for " + customer.getCustomerCode() + " ---");
+        System.out.printf("%-8s %-18s %-12s %-12s %-12s %-10s%n",
+            "ID", "Bill No", "Bill Date", "Due Date", "Total", "Status");
+        System.out.println("-".repeat(75));
+
+        for (Bill b : bills) {
+            System.out.printf("%-8d %-18s %-12s %-12s Rs.%-9s %-10s%n",
+                b.getBillId(),
+                b.getBillNo(),
+                b.getBillDate(),
+                b.getDueDate(),
+                b.getTotalAmount().setScale(2),
+                b.getBillStatus());
+        }
+    }
+
+    private void markBillPaid(Scanner sc, Customer customer) {
+
+        viewBills(customer);
+
+        List<Bill> bills = billService.getBillsForCustomer(customer.getCustomerId());
+        if (bills.isEmpty()) return;
+
+        System.out.print("\nEnter Bill ID to mark as PAID: ");
+        long billId;
+        try {
+            billId = Long.parseLong(sc.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid Bill ID.");
+            return;
+        }
+
+        try {
+            billService.payBill(billId);
+            System.out.println("Bill " + billId + " marked as PAID.");
+        } catch (RuntimeException e) {
+            System.out.println("[ERROR] " + e.getMessage());
+        }
+    }
+
+    private void markBillOverdue(Scanner sc, Customer customer) {
+
+        viewBills(customer);
+
+        List<Bill> bills = billService.getBillsForCustomer(customer.getCustomerId());
+        if (bills.isEmpty()) return;
+
+        System.out.print("\nEnter Bill ID to mark as OVERDUE: ");
+        long billId;
+        try {
+            billId = Long.parseLong(sc.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid Bill ID.");
+            return;
+        }
+
+        try {
+            billService.markOverdueIfRequired(billId);
+            System.out.println("Bill " + billId + " marked as OVERDUE.");
+        } catch (RuntimeException e) {
+            System.out.println("[ERROR] " + e.getMessage());
+        }
+    }
 
     // ============================
     // UI HELPER
