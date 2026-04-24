@@ -28,6 +28,7 @@ public class Application {
            private final UserRepository userRepository;
            private final RoleRepository roleRepository;
            private final CapacityInventoryRepository capacityInventoryRepository;
+           private final OltRepository oltRepository;
            // ===============================
            // Services
            // ===============================
@@ -67,11 +68,12 @@ public class Application {
                this.emailLogRepository = new EmailLogRepository();
                this.userRepository = new UserRepository();
                this.roleRepository = new RoleRepository();
+               this.oltRepository=new OltRepository();
                this.capacityInventoryRepository=new CapacityInventoryRepository();
                // ---------- services ----------
                this.emailService = new EmailService(emailLogRepository);
                this.planService = new PlanService(planRepository,emailService);
-               this.customerService=new CustomerService(customerRepository);
+               this.customerService=new CustomerService(customerRepository,planRepository,oltRepository);
                this.inventoryService = new InventoryService(inventoryRepository);
                this.userManagerService = new UserManagerService(userRepository,roleRepository);
                this.serviceAreaService=new ServiceAreaService(serviceAreaRepository);
