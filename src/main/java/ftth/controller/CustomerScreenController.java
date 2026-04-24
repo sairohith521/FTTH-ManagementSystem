@@ -24,7 +24,7 @@ public class CustomerScreenController {
     public void menu(Scanner sc,User currentUser) {
 
         System.out.println("\n--- Customer Lookup ---");
-        System.out.println("[1] Look up by Customer ID");
+        System.out.println("[1] Look up by Customer Code");
         System.out.println("[2] List all customers");
         System.out.print("Choose: ");
 

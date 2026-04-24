@@ -323,6 +323,35 @@ public String[] findConnection(long connectionId) {
 
     return null;
 }
+public Long findActiveConnectionIdByCustomerCode(String customerCode) {
+
+    String sql =
+        "SELECT cc.connection_id " +
+        "FROM customer_connections cc " +
+        "JOIN customers c " +
+        "  ON cc.customer_id = c.customer_id " +
+        "WHERE c.customer_code = ? " +
+        "  AND cc.connection_status = 'ACTIVE'";
+
+    try (Connection conn = DbConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+        ps.setString(1, customerCode);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getLong("connection_id");
+            }
+        }
+
+    } catch (SQLException e) {
+        throw new RuntimeException(
+            "Error fetching connection for customer " + customerCode, e
+        );
+    }
+
+    return null; // No active connection
+}
 
 
     public boolean updateConnectionPlan(String customerCode, long newPlanId) {

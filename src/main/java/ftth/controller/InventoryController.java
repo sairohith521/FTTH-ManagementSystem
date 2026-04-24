@@ -76,7 +76,6 @@ public class InventoryController {
         System.out.printf("%-10s %-20s %-10s %-12s %-15s%n",
             "Pincode", "OLT Code", "Type", "Splitters", "Ports (Avail/Total)");
         System.out.println("-".repeat(70));
-
         for (String pin : pins) {
             List<OltInventoryDTO> list = service.getByPincode(pin);
 

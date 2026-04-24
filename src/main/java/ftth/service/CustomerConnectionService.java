@@ -239,6 +239,9 @@ public Customer getCustomer(String customerCode) {
 public String[] findActiveConnectionByCode(String customerCode) {
     return connectionRepo.findActiveConnectionByCustomerCode(customerCode);
 }
+public Long findActiveConnectionByCustomerCode(String customerCode) {
+    return connectionRepo.findActiveConnectionIdByCustomerCode(customerCode);
+}
 public Long getActivePlanId(String customerCode) {
     return connectionRepo.findActivePlanIdByCustomerCode(customerCode);
 }
