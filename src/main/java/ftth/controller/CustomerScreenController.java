@@ -1,22 +1,15 @@
 package ftth.controller;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 import ftth.service.*;
 import ftth.util.InputUtil;
-import ftth.controller.*;
 import ftth.model.*;
-import ftth.repository.CustomerRepository;
 public class CustomerScreenController {
     private final CustomerService customerService;
     private final BillService billService;
     private final EmailService emailService;
     private final CustomerConnectionService customerConnectionService;
     private final PlanService planService;
-
-    private InventoryService inventoryService;
-    private CustomerRepository customerRepo;
-
     public CustomerScreenController(CustomerService customerService,BillService billService,EmailService emailService,PlanService planService,CustomerConnectionService customerConnectionService) {
         this.customerService = customerService;
         this.billService = billService;
@@ -258,13 +251,17 @@ private void moveCustomer(Scanner sc, Customer customer, User currentUser) {
     }
 
     // 2️⃣ Read OLT type
-    System.out.print("Enter OLT type (OLT300 / OLT500): ");
-    String oltType = sc.nextLine().trim().toUpperCase();
+   String oltType =
+    customerService.findOltTypeByCustomerId(customer.getCustomerId());
 
-    if (!"OLT300".equals(oltType) && !"OLT500".equals(oltType)) {
-        System.out.println("[ERROR] Invalid OLT type.");
-        return;
-    }
+if (oltType == null) {
+    System.out.println(
+        "[ERROR] No active OLT available for the customer’s service area."
+    );
+    return;
+}
+
+System.out.println("Resolved OLT Type: " + oltType);
 
     // 3️⃣ Get active connection
     CustomerConnection connection =
@@ -276,7 +273,11 @@ private void moveCustomer(Scanner sc, Customer customer, User currentUser) {
         System.out.println("No active connection found for this customer.");
         return;
     }
-
+      System.out.print("Confirm Move? (y/n): ");
+    if (!sc.nextLine().equalsIgnoreCase("y")) {
+        System.out.println("Cancelled.");
+        return;
+    }
     // 4️⃣ Call ONLY the required service method ✅
     customerConnectionService.updateCustomerConnection(
         connection,        // existing connection
