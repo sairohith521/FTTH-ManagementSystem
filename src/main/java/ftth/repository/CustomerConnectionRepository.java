@@ -470,18 +470,18 @@ public Long findActiveConnectionIdByCustomerCode(String customerCode) {
 public void listActiveConnections() {
 
     String sql =
-        "SELECT cc.connection_id, c.full_name, sa.pincode, " +
-        "p.plan_name, p.monthly_price, cc.connection_status, " +
-        "o.olt_code, o.olt_type, s.splitter_number, pt.port_number " +
-        "FROM customer_connections cc " +
-        "JOIN customers c ON c.customer_id = cc.customer_id " +
-        "JOIN plans p ON p.plan_id = cc.plan_id " +
-        "JOIN ports pt ON pt.port_id = cc.port_id " +
-        "JOIN splitters s ON s.splitter_id = pt.splitter_id " +
-        "JOIN olts o ON o.olt_id = s.olt_id " +
-        "JOIN service_areas sa ON sa.service_area_id = cc.service_area_id " +
-        "WHERE cc.connection_status = 'ACTIVE' " +
-        "ORDER BY cc.connection_id";
+    "SELECT cc.connection_id, c.customer_code, c.full_name, sa.pincode, " +
+    "p.plan_name, p.monthly_price, cc.connection_status, " +
+    "o.olt_code, o.olt_type, s.splitter_number, pt.port_number " +
+    "FROM customer_connections cc " +
+    "JOIN customers c ON c.customer_id = cc.customer_id " +
+    "JOIN plans p ON p.plan_id = cc.plan_id " +
+    "JOIN ports pt ON pt.port_id = cc.port_id " +
+    "JOIN splitters s ON s.splitter_id = pt.splitter_id " +
+    "JOIN olts o ON o.olt_id = s.olt_id " +
+    "JOIN service_areas sa ON sa.service_area_id = cc.service_area_id " +
+    "WHERE cc.connection_status = 'ACTIVE' " +
+    "ORDER BY cc.connection_id";
 
     try (Connection con = DbConnection.getConnection();
          PreparedStatement ps = con.prepareStatement(sql);
@@ -491,24 +491,25 @@ public void listActiveConnections() {
 
         System.out.println("\n--- Active Connections ---");
         System.out.printf(
-            "%-5s %-18s %-8s %-12s %-10s %-8s %-25s%n",
-            "ID", "Customer", "Pincode", "Plan", "Price", "OLT", "Port"
-        );
-        System.out.println("-".repeat(95));
+    "%-5s %-12s %-18s %-8s %-12s %-10s %-8s %-25s%n",
+    "ID", "CustCode", "Customer", "Pincode", "Plan", "Price", "OLT", "Port"
+);
+        System.out.println("-".repeat(110));
 
         while (rs.next()) {
-            System.out.printf(
-                "%-5d %-18s %-8s %-12s Rs.%-7.0f %-8s %s/Spl%d/Port%d%n",
-                rs.getLong("connection_id"),
-                rs.getString("full_name"),
-                rs.getString("pincode"),
-                rs.getString("plan_name"),
-                rs.getDouble("monthly_price"),
-                rs.getString("olt_type"),
-                rs.getString("olt_code"),
-                rs.getInt("splitter_number"),
-                rs.getInt("port_number")
-            );
+           System.out.printf(
+    "%-5d %-12s %-18s %-8s %-12s Rs.%-7.0f %-8s %s/Spl%d/Port%d%n",
+    rs.getLong("connection_id"),
+    rs.getString("customer_code"),   // ✅ new 2nd column
+    rs.getString("full_name"),       // ✅ name stays
+    rs.getString("pincode"),
+    rs.getString("plan_name"),
+    rs.getDouble("monthly_price"),
+    rs.getString("olt_type"),
+    rs.getString("olt_code"),
+    rs.getInt("splitter_number"),
+    rs.getInt("port_number")
+);
             found = true;
         }
 

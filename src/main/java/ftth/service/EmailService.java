@@ -172,7 +172,6 @@ private boolean sendEmail(String to, String subject, String body) {
     String body =
         "Dear " + customer.getFullName() + ",\n\n" +
         "Your FTTH connection has been moved to a new service area.\n\n" +
-        "Connection ID : " + connection.getConnectionId() + "\n" +
         "New Pincode   : " + newPincode + "\n\n" +
         "Thank you for choosing Aaha Telecom.\n\n" +
         "Regards,\nAaha Telecom Team";

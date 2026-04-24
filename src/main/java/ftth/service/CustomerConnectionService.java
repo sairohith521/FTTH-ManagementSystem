@@ -113,16 +113,10 @@ Bill bill = new Bill(
     planCharge,
     gstAmount
 );
-// billRepository.insert(bill);
+billRepository.insert(bill);
     // =================================
-    // 8️⃣ Send confirmation email (NO DB)
-    // =================================
-    // email.sendConnectionConfirmation(
-    //     customer.getEmail(),
-    //     connection.getConnectionId(),
-    //     selectedPlan.getPlanName(),
-    //     selectedPlan.getMonthlyPrice()
-    // );
+    // 8️⃣ Send confirmation email 
+    
     email.sendConnectionConfirmation(customer, connection, selectedPlan);
 
   
@@ -222,12 +216,13 @@ public void disconnect(Long connectionId, Long currentUserId) {
         LocalDate.now(),
         currentUserId
     );
+      Customer customer =customerRepo.findById(connection.getCustomerId());
 
     // 3️⃣ Release port
     inventoryService.releasePort(connection.getPortId());
+    customer.deactivate();
 
     // 4️⃣ Notify customer (optional)
-    Customer customer =customerRepo.findById(connection.getCustomerId());
     email.sendDisconnectionEmail(customer, connection);;
 }
 

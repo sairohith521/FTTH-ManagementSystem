@@ -83,7 +83,7 @@ public class Application {
                // ---------- controllers ----------
                this.planAdmin=new PlanAdmin(planService,sc);
                this.inventoryController=new InventoryController(inventoryService);
-               this.customerScreenController=new CustomerScreenController(customerService,billService, emailService, planService, customerConnectionService);
+               this.customerScreenController=new CustomerScreenController(serviceAreaService,customerService,billService, emailService, planService, customerConnectionService);
                this.customerConnectionController =new CustomerConnectionController(serviceAreaService,customerConnectionService,planService,inventoryService);
                this.adminController =new AdminController(inventoryController,planAdmin,customerScreenController,customerConnectionController,userManagerService,capacityService);
                this.csrController =new CSRController(customerScreenController,customerConnectionController);

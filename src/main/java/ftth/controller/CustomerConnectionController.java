@@ -119,9 +119,8 @@ System.out.println("OLT Type (from plan): " + oltType);
         return;
     }
     String pincode=serviceAreaService.getPincode(connection.getServiceAreaId());
+    Long planId=connection.getPlanId();
     System.out.println("Current Pincode : " + pincode);
-    System.out.println("Current Port ID : " + connection.getPortId());
-
     // 3️⃣ Read new pincode
     long newPincode =
         InputUtil.readLong(sc, "Enter New Pincode (0 to cancel): ");
@@ -132,7 +131,8 @@ System.out.println("OLT Type (from plan): " + oltType);
     }
 
     // 4️⃣ Read OLT type
-    String oltType = InputUtil.readOLTType(sc);
+    Plan currplan = planService.findPlanById(planId);
+    String oltType=currplan.getOltType();
 
     // 5️⃣ Confirm
     System.out.print("Confirm move? (y/n): ");
