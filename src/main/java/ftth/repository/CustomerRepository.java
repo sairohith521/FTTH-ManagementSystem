@@ -72,7 +72,41 @@ public class CustomerRepository {
 
     throw new RuntimeException("Failed to generate customer ID");
 }
+public void printCustomerCard(Customer c) {
 
+    String sql = "SELECT p.plan_name, sa.pincode " +
+                 "FROM customer_connections cc " +
+                 "JOIN plans p ON p.plan_id = cc.plan_id " +
+                 "JOIN service_areas sa ON sa.service_area_id = cc.service_area_id " +
+                 "WHERE cc.customer_id = ? AND cc.connection_status = 'ACTIVE'";
+
+    String planName = "N/A";
+    String pincode = "N/A";
+
+    try (Connection con = DbConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        ps.setLong(1, c.getCustomerId());
+        ResultSet rs = ps.executeQuery();
+
+        if (rs.next()) {
+            planName = rs.getString("plan_name");
+            pincode = rs.getString("pincode");
+        }
+
+    } catch (SQLException e) {
+        System.out.println("Error fetching plan/pincode");
+    }
+
+    System.out.println("\n+----------------------------------+");
+    System.out.println(" Customer Code : " + c.getCustomerCode());
+    System.out.println(" Name          : " + c.getFullName());
+    System.out.println(" Email         : " + c.getEmail());
+    System.out.println(" Status        : " + c.getStatus());
+    System.out.println(" Plan Name     : " + planName);
+    System.out.println(" Pincode       : " + pincode);
+    System.out.println("+----------------------------------+");
+}
 public Customer findByCustomerCode(String customerCode) {
 
        String sql =

@@ -9,8 +9,10 @@ public class CustomerScreenController {
     private final BillService billService;
     private final EmailService emailService;
     private final CustomerConnectionService customerConnectionService;
+    private final ServiceAreaService serviceAreaService;
     private final PlanService planService;
-    public CustomerScreenController(CustomerService customerService,BillService billService,EmailService emailService,PlanService planService,CustomerConnectionService customerConnectionService) {
+    public CustomerScreenController(ServiceAreaService serviceAreaService,CustomerService customerService,BillService billService,EmailService emailService,PlanService planService,CustomerConnectionService customerConnectionService) {
+        this.serviceAreaService = serviceAreaService;
         this.customerService = customerService;
         this.billService = billService;
         this.emailService =emailService;
@@ -24,7 +26,7 @@ public class CustomerScreenController {
     public void menu(Scanner sc,User currentUser) {
 
         System.out.println("\n--- Customer Lookup ---");
-        System.out.println("[1] Look up by Customer ID");
+        System.out.println("[1] Look up by Customer Code");
         System.out.println("[2] List all customers");
         System.out.print("Choose: ");
 
@@ -116,7 +118,7 @@ public class CustomerScreenController {
                     break;
 
                 case "4":
-                    disconnectCustomer(sc, customer);
+                    disconnectCustomer(sc, customer,currentUser);
                     back = true;
                     break;
 
@@ -240,84 +242,83 @@ private void changePlan(Scanner sc, Customer customer, User currentUser) {
 
 private void moveCustomer(Scanner sc, Customer customer, User currentUser) {
 
-    // 1️⃣ Read new pincode
-    System.out.print("Enter new pincode: ");
-    long newPincode;
-    try {
-        newPincode = Long.parseLong(sc.nextLine().trim());
-    } catch (NumberFormatException e) {
-        System.out.println("[ERROR] Invalid pincode.");
-        return;
-    }
-
-    // 2️⃣ Read OLT type
-   String oltType =
-    customerService.findOltTypeByCustomerId(customer.getCustomerId());
-
-if (oltType == null) {
-    System.out.println(
-        "[ERROR] No active OLT available for the customer’s service area."
-    );
-    return;
-}
-
-System.out.println("Resolved OLT Type: " + oltType);
-
-    // 3️⃣ Get active connection
-    CustomerConnection connection =
-        customerConnectionService.getActiveConnectionByCustomerCode(
-            customer.getCustomerCode()
-        );
+    // 2️⃣ Fetch active connection
+    CustomerConnection connection =customerConnectionService.getActiveConnectionByCustomerCode(customer.getCustomerCode());
 
     if (connection == null) {
-        System.out.println("No active connection found for this customer.");
+        System.out.println("No active connection found.");
         return;
     }
-      System.out.print("Confirm Move? (y/n): ");
+    String pincode=serviceAreaService.getPincode(connection.getServiceAreaId());
+    Long planId=connection.getPlanId();
+    System.out.println("Current Pincode : " + pincode);
+    // 3️⃣ Read new pincode
+    long newPincode =
+        InputUtil.readLong(sc, "Enter New Pincode (0 to cancel): ");
+
+    if (newPincode == 0) {
+        System.out.println("Cancelled.");
+        return;
+    }
+
+    // 4️⃣ Read OLT type
+    Plan currplan = planService.findPlanById(planId);
+    String oltType=currplan.getOltType();
+
+    // 5️⃣ Confirm
+    System.out.print("Confirm move? (y/n): ");
     if (!sc.nextLine().equalsIgnoreCase("y")) {
         System.out.println("Cancelled.");
         return;
     }
-    // 4️⃣ Call ONLY the required service method ✅
+
+    // 6️⃣ Delegate to service
     customerConnectionService.updateCustomerConnection(
-        connection,        // existing connection
-        newPincode,        // new pincode
-        oltType,           // new OLT type
+        connection,
+        newPincode,
+        oltType,
         currentUser.getUserId()
     );
 
-    System.out.println("✅ Customer moved successfully.");
+    System.out.println("[SUCCESS] Customer moved successfully.");
 }
 
-private void disconnectCustomer(Scanner sc, Customer customer) {
+private void disconnectCustomer(Scanner sc, Customer customer,User currentUser) {
 
-    // Ask for confirmation
-    System.out.print("Type customer ID to confirm disconnect: ");
-    String confirmInput = sc.nextLine().trim().toUpperCase();
+   Long connectionId=customerConnectionService.findActiveConnectionByCustomerCode(customer.getCustomerCode());
 
-    // Validate confirmation
-    boolean confirm = confirmInput.equals(customer.getCustomerCode());
-
-    if (!confirm) {
-        System.out.println("ID mismatch. Cancelled.");
-        return;
-    }
-
-    // Get active connection
+    // 3️⃣ Fetch connection
     CustomerConnection connection =
-        customerConnectionService.getActiveConnectionByCustomerCode(
-            customer.getCustomerCode()
-        );
+        customerConnectionService.getConnectionById(connectionId);
 
     if (connection == null) {
-        System.out.println("No active connection found for this customer.");
+        System.out.println("Connection not found.");
         return;
     }
 
-    // ✅ Call REQUIRED service method
-    customerConnectionService.disconnectConnection(
+    if (!connection.isActive()) {
+        System.out.println("Connection is already disconnected.");
+        return;
+    }
+
+    // 4️⃣ Show summary
+    System.out.println("\nYou are about to disconnect:");
+    System.out.println("  Connection ID : " + connection.getConnectionId());
+    System.out.println("  Customer ID   : " + connection.getCustomerId());
+    System.out.println("  Service Area  : " + connection.getServiceAreaId());
+    System.out.println("  Port ID       : " + connection.getPortId());
+
+    // 5️⃣ Confirm
+    System.out.print("Confirm disconnect? (y/n): ");
+    if (!sc.nextLine().equalsIgnoreCase("y")) {
+        System.out.println("Cancelled.");
+        return;
+    }
+
+    // 6️⃣ Delegate to service
+    customerConnectionService.disconnect(
         connection.getConnectionId(),
-        true
+        currentUser.getUserId()
     );
 
     System.out.println("✅ Customer disconnected successfully.");
@@ -463,20 +464,13 @@ private void disconnectCustomer(Scanner sc, Customer customer) {
     // UI HELPER
     // ============================
    private void printCustomerCard(Customer c) {
-
-    System.out.println("\n+----------------------------------+");
-    System.out.println(" Customer ID : " + c.getCustomerCode());
-    System.out.println(" Name        : " + c.getFullName());
-    System.out.println(" Email       : " + c.getEmail());
-    System.out.println(" Salary      : Rs. " + c.getSalary());
-    System.out.println(" Status      : " + c.getStatus());
-    System.out.println("+----------------------------------+");
+      customerService.printCustomerCard(c);
 }
    private void printCustomerListHeader() {
 
     System.out.printf(
         "%-12s | %-20s | %-25s | %-10s%n",
-        "Customer ID", "Name", "Email", "Status"
+        "Customer Code", "Name", "Email", "Status"
     );
     System.out.println("=".repeat(75));
 }

@@ -56,15 +56,16 @@ public class CustomerConnectionController {
         System.out.println("Service NOT available in pincode " + pincode + ".");
         return;
     }
+String oltType = selectedPlan.getOltType();
 
-    String oltType;
-    while (true) {
-        System.out.print("Select OLT Type [1] OLT300  [2] OLT500: ");
-        String oltChoice = sc.nextLine().trim();
-        if ("1".equals(oltChoice)) { oltType = "OLT300"; break; }
-        else if ("2".equals(oltChoice)) { oltType = "OLT500"; break; }
-        else { System.out.println("Invalid choice. Enter 1 or 2."); }
-    }
+if (oltType == null) {
+    System.out.println(
+        "[ERROR] Unable to determine OLT type for selected plan."
+    );
+    return;
+}
+
+System.out.println("OLT Type (from plan): " + oltType);
     ServiceArea serviceArea=serviceAreaService.findByPincode(pincode);
 
     int ports = inventoryService.getAvailablePortsByType(serviceArea.getServiceAreaId(), oltType);
@@ -118,9 +119,8 @@ public class CustomerConnectionController {
         return;
     }
     String pincode=serviceAreaService.getPincode(connection.getServiceAreaId());
+    Long planId=connection.getPlanId();
     System.out.println("Current Pincode : " + pincode);
-    System.out.println("Current Port ID : " + connection.getPortId());
-
     // 3️⃣ Read new pincode
     long newPincode =
         InputUtil.readLong(sc, "Enter New Pincode (0 to cancel): ");
@@ -131,7 +131,8 @@ public class CustomerConnectionController {
     }
 
     // 4️⃣ Read OLT type
-    String oltType = InputUtil.readOLTType(sc);
+    Plan currplan = planService.findPlanById(planId);
+    String oltType=currplan.getOltType();
 
     // 5️⃣ Confirm
     System.out.print("Confirm move? (y/n): ");
@@ -254,13 +255,14 @@ public void doDisconnect(Scanner sc, User currentUser) {
     customerConnectionService.listActiveConnections();
 
     // 2️⃣ Read connection id
-    long connectionId =
-        InputUtil.readLong(sc, "Enter Connection ID to disconnect (0 to cancel): ");
+   String customerCode =
+    InputUtil.readString(sc, "Enter Customer Code (or 0 to cancel): ");
 
-    if (connectionId == 0) {
-        System.out.println("Cancelled.");
-        return;
-    }
+if ("0".equals(customerCode)) {
+    System.out.println("Cancelled.");
+    return;
+}
+Long connectionId=customerConnectionService.findActiveConnectionByCustomerCode(customerCode);
 
     // 3️⃣ Fetch connection
     CustomerConnection connection =

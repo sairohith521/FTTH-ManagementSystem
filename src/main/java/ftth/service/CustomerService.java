@@ -78,8 +78,8 @@ public Customer findOrCreateCustomer(String name,
 
     return customer;
 }
-
-
+public void printCustomerCard(Customer c) {
+   repo.printCustomerCard(c);
 }
-
+}
     
