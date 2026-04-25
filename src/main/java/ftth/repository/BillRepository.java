@@ -52,6 +52,27 @@ public void insert(Bill bill) {
         throw new RuntimeException("Error inserting bill", e);
     }
 }
+public long getLastBillSequence() {
+
+    String sql = "SELECT bill_no FROM bills ORDER BY bill_id DESC LIMIT 1";
+
+    try (Connection conn = DbConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+
+        if (rs.next()) {
+            String billNo = rs.getString("bill_no");
+            // Example: BILL-2026-000123
+            String[] parts = billNo.split("-");
+            return Long.parseLong(parts[2]); // 123
+        }
+
+    } catch (Exception e) {
+        throw new RuntimeException("Failed to read last bill number", e);
+    }
+
+    return 0; // no bills yet
+}
     // ===============================
     // READ — BY BILL ID
     // ===============================

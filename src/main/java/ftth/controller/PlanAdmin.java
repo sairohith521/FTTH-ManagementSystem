@@ -40,7 +40,7 @@ public class PlanAdmin {
                 }
 
                 switch (choice) {
-                    case 1: viewActivePlans(); break;
+                    case 1: showPlans(); break;
                     case 2: addPlanFlow(currUser); break;
                     case 3: updatePlanFlow(currUser); break;
                     case 4: togglePlanFlow(currUser); break;
@@ -58,35 +58,37 @@ public class PlanAdmin {
             }
         }
     }
-private void viewActivePlans() {
+// private void viewActivePlans() {
 
-    List<Plan> plans = service.getActivePlans();
+//     List<Plan> plans = service.getActivePlans();
 
-    if (plans.isEmpty()) {
-        System.out.println("No enabled plans available.");
-        return;
-    }
+//     if (plans.isEmpty()) {
+//         System.out.println("No enabled plans available.");
+//         return;
+//     }
 
-    System.out.println("---- ENABLED PLANS ----");
-    System.out.printf(
-        "%-6s | %-15s | %-10s | %-18s | %-5s | %-10s | %-8s%n",
-        "ID", "Name", "Speed", "Data", "OTT", "Price", "OLT"
-    );
-    System.out.println("=".repeat(85));
+//     System.out.println("---- ENABLED PLANS ----");
+//     System.out.printf(
+//         "%-6s | %-15s | %-10s | %-18s | %-5s | %-10s | %-8s | %-10s%n",
+//         "ID", "Name", "Speed", "Data", "OTT", "Price", "OLT", "Customers"
+//     );
+//     System.out.println("=".repeat(100));
 
-    for (Plan p : plans) {
-        System.out.printf(
-            "%-6d | %-15s | %-10s | %-18s | %-5d | %-10s | %-8s%n",
-            p.getPlanId(),
-            p.getPlanName(),
-            p.getSpeedLabel(),
-            p.getDataLimitLabel(),
-            p.getOttCount(),
-            p.getMonthlyPrice(),
-            p.getOltType()
-        );
-    }
-}
+//     for (Plan p : plans) {
+//         System.out.printf(
+//             "%-6d | %-15s | %-10s | %-18s | %-5d | %-10s | %-8s | %-10d%n",
+//             p.getPlanId(),
+//             p.getPlanName(),
+//             p.getSpeedLabel(),
+//             p.getDataLimitLabel(),
+//             p.getOttCount(),
+//             p.getMonthlyPrice(),
+//             p.getOltType(),
+//             p.getCustomerCount()   // ✅ added column
+//         );
+//     }
+// }
+
 private void addPlanFlow(User currUser) {
 
     // 1️⃣ Read inputs
@@ -156,19 +158,57 @@ private void updatePlanFlow(User currUser) {
         + " | Rs." + existing.getMonthlyPrice()
         + " | OLT: " + existing.getOltType()
     );
+    String planName = existing.getPlanName();
+    String speedLabel = existing.getSpeedLabel();
+    String dataLimitLabel = existing.getDataLimitLabel();
+    int ottCount = existing.getOttCount();
+    BigDecimal monthlyPrice = existing.getMonthlyPrice();
+    boolean done = false;
 
-    // 3️⃣ Read updated values
-    String planName = InputUtil.readPlanName(sc);
-    String speedLabel = InputUtil.readSpeed(sc);
-    String dataLimitLabel = InputUtil.readDataLimit(sc);
+while (!done) {
+    System.out.println("\nWhat do you want to edit?");
+    System.out.println("1. Plan Name");
+    System.out.println("2. Speed Label");
+    System.out.println("3. Data Limit");
+    System.out.println("4. OTT Count");
+    System.out.println("5. Monthly Price");
+    System.out.println("0. Finish Editing");
 
-    System.out.print("Enter new OTT Count: ");
-    int ottCount = InputUtil.readInt(sc);
+    int choice = InputUtil.readInt(sc);
 
-    System.out.print("Enter new Monthly Price: ");
-    BigDecimal monthlyPrice = InputUtil.readBigDecimal(sc); // ✅ BigDecimal
+    switch (choice) {
 
-    String oltType = InputUtil.readOLTType(sc);
+        case 1:
+             planName = InputUtil.readPlanName(sc);
+            break;
+
+        case 2:
+             speedLabel = InputUtil.readSpeed(sc);
+            break;
+
+        case 3:
+          dataLimitLabel = InputUtil.readDataLimit(sc);
+            break;
+
+        case 4:
+            System.out.print("Enter new OTT Count: ");
+            ottCount=InputUtil.readInt(sc);
+            break;
+
+        case 5:
+            System.out.print("Enter new Monthly Price: ");
+            monthlyPrice=InputUtil.readBigDecimal(sc);
+            break;
+
+        case 0:
+            done = true;
+            break;
+
+        default:
+            System.out.println("Invalid option. Try again.");
+    }
+}
+
 
     // 4️⃣ Summary
     System.out.println("\n--- Update Summary ---");
@@ -177,7 +217,7 @@ private void updatePlanFlow(User currUser) {
     System.out.println("Data      : " + dataLimitLabel);
     System.out.println("OTTs      : " + ottCount);
     System.out.println("Price     : Rs." + monthlyPrice);
-    System.out.println("OLT Type  : " + oltType);
+    System.out.println("OLT Type  : " + existing.getOltType());
 
     System.out.print("Confirm update? (y/n): ");
     if (!sc.nextLine().trim().equalsIgnoreCase("y")) {
@@ -192,7 +232,7 @@ private void updatePlanFlow(User currUser) {
         dataLimitLabel,
         ottCount,
         monthlyPrice,
-        oltType,
+        existing.getOltType(),
         existing.isActive()
     );
 
@@ -264,4 +304,48 @@ private void togglePlanFlow(User currUser) {
         if (success) System.out.println("Plan '" + plan.getPlanName() + "' deleted permanently.");
         else         System.out.println("Failed to delete plan.");
     }
+    public void showPlans() {
+
+        List<Plan> plans = service.getPlansWithCustomerCount();
+
+        if (plans.isEmpty()) {
+            System.out.println("No plans available.");
+            return;
+        }
+
+        System.out.println("---- PLANS ----");
+        System.out.printf(
+            "%-6s | %-15s | %-10s | %-18s | %-5s | %-10s | %-8s | %-10s | %-10s%n",
+            "ID", "Name", "Speed", "Data", "OTT", "Price", "OLT", "Customers", "Status"
+        );
+        System.out.println("=".repeat(110));
+
+        for (Plan p : plans) {
+            String status = p.isActive() ? "Enabled" : "Disabled";
+
+            System.out.printf(
+                "%-6d | %-15s | %-10s | %-18s | %-5d | %-10.2f | %-8s | %-10d | %-10s%n",
+                p.getPlanId(),
+                p.getPlanName(),
+                p.getSpeedLabel(),
+                p.getDataLimitLabel(),
+                p.getOttCount(),
+                p.getMonthlyPrice(),
+                p.getOltType(),
+                p.getCustomerCount(),
+                status
+            );
+        }
+    }
+
 }
+
+
+
+
+
+
+
+
+
+    

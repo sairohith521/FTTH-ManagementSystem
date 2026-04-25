@@ -23,6 +23,9 @@ public class Plan {
     private boolean active;             // is_active
     private LocalDateTime createdAt;    // created_at
 
+// ✅ derived / runtime-only
+    private int customerCount;
+
 
     // ===============================
     // Constructors
@@ -161,6 +164,9 @@ public class Plan {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+    
+    public int getCustomerCount() { return customerCount; }
+    public void setCustomerCount(int customerCount) { this.customerCount = customerCount; }
 
 
     // ===============================

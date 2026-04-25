@@ -65,6 +65,8 @@ public class MaintController {
 }
 
     private void doCapacity(Scanner sc) {
+
+    System.out.println("\n--- Capacity Dashboard ---");
     capacityService.showCapacityDashboard();
     System.out.print("\nPress Enter to continue...");
     sc.nextLine();

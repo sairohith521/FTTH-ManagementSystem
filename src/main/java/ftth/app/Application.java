@@ -27,6 +27,8 @@ public class Application {
            private final EmailLogRepository emailLogRepository;
            private final UserRepository userRepository;
            private final RoleRepository roleRepository;
+           private final CapacityInventoryRepository capacityInventoryRepository;
+           private final OltRepository oltRepository;
            // ===============================
            // Services
            // ===============================
@@ -66,20 +68,22 @@ public class Application {
                this.emailLogRepository = new EmailLogRepository();
                this.userRepository = new UserRepository();
                this.roleRepository = new RoleRepository();
+               this.oltRepository=new OltRepository();
+               this.capacityInventoryRepository=new CapacityInventoryRepository();
                // ---------- services ----------
                this.emailService = new EmailService(emailLogRepository);
                this.planService = new PlanService(planRepository,emailService);
-               this.customerService=new CustomerService(customerRepository);
+               this.customerService=new CustomerService(customerRepository,planRepository,oltRepository);
                this.inventoryService = new InventoryService(inventoryRepository);
                this.userManagerService = new UserManagerService(userRepository,roleRepository);
                this.serviceAreaService=new ServiceAreaService(serviceAreaRepository);
                this.billService=new BillService(billRepository);
-               this.capacityService=new CapacityService(new CapacityInventoryRepository());
+               this.capacityService=new CapacityService(capacityInventoryRepository);
                this.customerConnectionService = new CustomerConnectionService(customerService,customerRepository,customerConnectionRepository,planService,inventoryService,billRepository,serviceAreaService,emailService);
                // ---------- controllers ----------
                this.planAdmin=new PlanAdmin(planService,sc);
                this.inventoryController=new InventoryController(inventoryService);
-               this.customerScreenController=new CustomerScreenController(customerService,billService, emailService, planService, customerConnectionService);
+               this.customerScreenController=new CustomerScreenController(serviceAreaService,customerService,billService, emailService, planService, customerConnectionService);
                this.customerConnectionController =new CustomerConnectionController(serviceAreaService,customerConnectionService,planService,inventoryService);
                this.adminController =new AdminController(inventoryController,planAdmin,customerScreenController,customerConnectionController,userManagerService,capacityService);
                this.csrController =new CSRController(customerScreenController,customerConnectionController);

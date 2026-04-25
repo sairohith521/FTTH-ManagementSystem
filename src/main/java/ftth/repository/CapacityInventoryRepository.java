@@ -34,19 +34,18 @@ public class CapacityInventoryRepository {
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
-            while (rs.next()) {
+           while (rs.next()) {
                 CapacityRow r = new CapacityRow();
-                r.pincode = rs.getString("pincode");
-                r.oltId = rs.getLong("olt_id");
-                r.oltType = rs.getString("olt_type");
-                r.totalPorts = rs.getInt("total_ports");
-                r.usedPorts = rs.getInt("used_ports");
-                r.freePorts = rs.getInt("free_ports");
-                r.utilization = rs.getDouble("utilization");
-                r.splitterCount = rs.getInt("splitter_count");
+                r.setPincode(rs.getString("pincode"));
+                r.setOltId(rs.getLong("olt_id"));
+                r.setOltType(rs.getString("olt_type"));
+                r.setTotalPorts(rs.getInt("total_ports"));
+                r.setUsedPorts(rs.getInt("used_ports"));
+                r.setFreePorts(rs.getInt("free_ports"));
+                r.setUtilization(rs.getDouble("utilization"));
+                r.setSplitterCount(rs.getInt("splitter_count"));
                 rows.add(r);
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }

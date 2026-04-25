@@ -46,22 +46,25 @@ public void printActivePlans(List<Plan> plans) {
         return;
     }
 
-    for (Plan p : plans) {
-        System.out.println(
-            p.getPlanId() + ". " +
-            p.getPlanName() +
-            " | Speed: " + p.getSpeedLabel() +
-            " | Data: " + p.getDataLimitLabel() +
-            " | OTTs: " + p.getOttCount() +
-            " | Rs." + p.getMonthlyPrice() +
-            " | OLT: " + p.getOltType()
-        );
-    }
-}
+  System.out.printf(
+    "%-6s | %-15s | %-10s | %-18s | %-5s | %-10s | %-8s | %-10s%n",
+    "ID", "Name", "Speed", "Data", "OTT", "Price", "OLT", "Customers"
+);
+System.out.println("=".repeat(100));
 
- private void showActivePlans() {
-    List<Plan> plans =getActivePlans();
-    printActivePlans(plans);
+for (Plan p : plans) {
+    System.out.printf(
+        "%-6d | %-15s | %-10s | %-18s | %-5d | %-10.2f | %-8s | %-10d%n",
+        p.getPlanId(),
+        p.getPlanName(),
+        p.getSpeedLabel(),
+        p.getDataLimitLabel(),
+        p.getOttCount(),
+        p.getMonthlyPrice(),
+        p.getOltType(),
+        p.getCustomerCount()   // ✅ added customers column
+    );
+}
 }
 public void viewAllPlans() {
         List<Plan> plans = repo.findAllPlans();
@@ -156,5 +159,15 @@ public Plan getActivePlan(Long planId) {
 public Plan findPlanById(Long planId) {
         return repo.findById(planId);
     }
+    
+    public List<Plan> getPlansWithCustomerCount() {
+        return repo.findPlansWithCustomerCount();
+    }
+
 }
+
+
+
+
+
 

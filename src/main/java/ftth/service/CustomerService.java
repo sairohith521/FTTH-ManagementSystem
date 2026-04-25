@@ -6,11 +6,13 @@ public class CustomerService {
 
     private final CustomerRepository repo;
     private final PlanRepository planRepo;
+    private final OltRepository oltRepository;
 
 
-    public CustomerService(CustomerRepository customerRepository) {
+    public CustomerService(CustomerRepository customerRepository,PlanRepository planRepo,OltRepository oltRepository) {
         this.repo = customerRepository;
-        this.planRepo=new PlanRepository();
+        this.planRepo=planRepo;
+        this.oltRepository=oltRepository;
     }
 
     public Customer lookupCustomerByCode(String code) {
@@ -41,6 +43,9 @@ public class CustomerService {
      */
     public Customer findByEmail(String email) {
         return repo.findByEmail(email);
+    }
+    public String findOltTypeByCustomerId(Long customerId){
+        return oltRepository.findOltTypeByCustomerId(customerId);
     }
 
     /**
@@ -73,8 +78,8 @@ public Customer findOrCreateCustomer(String name,
 
     return customer;
 }
-
-
+public void printCustomerCard(Customer c) {
+   repo.printCustomerCard(c);
 }
-
+}
     
