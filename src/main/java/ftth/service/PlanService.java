@@ -120,9 +120,9 @@ public boolean togglePlan(long id,User currUser) {
     }
 
 public boolean deletePlan(long planId,User currUser) {
-    boolean deleted=repo.deletePlan(planId);
     Plan plan = repo.findById(planId);
-    if (deleted) {
+    boolean deleted=repo.deletePlan(planId);
+    if (deleted && plan != null) {
         emailService.sendPlanAdminEmail(
             "PLAN_DELETED",
             plan,

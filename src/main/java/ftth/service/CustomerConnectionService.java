@@ -57,10 +57,12 @@ public void createConnection(AddConnectionRequest req,Long currentUserId) {
 
     if (serviceArea == null) {
          System.out.println("Service is not available in this pincode.");
+         return;
     }
 
     if (!serviceArea.isActive()) {
         System.out.println("Service area is currently inactive.");
+        return;
     }
 
     // =================================
@@ -134,7 +136,10 @@ public void updateCustomerConnection(CustomerConnection connection,
 
     // 1️⃣ Validate new service area
     ServiceArea newArea =serviceAreaService.getActiveServiceArea(newPincode);
-    if(newArea==null)System.out.println("Service not Available..");
+    if(newArea==null){
+        System.out.println("Service not Available..");
+        return;
+    }
 
     // 2️⃣ Allocate new port
     Long newPortId =inventoryService.allocatePort(newArea.getServiceAreaId(),oltType );

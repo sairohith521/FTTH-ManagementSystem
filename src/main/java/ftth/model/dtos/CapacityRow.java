@@ -1,15 +1,15 @@
-package ftth.model.dto;
+package ftth.model.dtos;
 
 public class CapacityRow {
 
-    private String pincode;
-    private long oltId;
-    private String oltType;
-    private int totalPorts;
-    private int usedPorts;
-    private int freePorts;
-    private double utilization;
-    private int splitterCount;
+    public String pincode;
+    public long oltId;
+    public String oltType;
+    public int totalPorts;
+    public int usedPorts;
+    public int freePorts;
+    public double utilization;
+    public int splitterCount;
 
     // =========================
     // Getters and Setters

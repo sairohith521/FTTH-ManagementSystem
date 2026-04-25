@@ -2,21 +2,22 @@ package ftth.controller;
 import java.util.Scanner;
 import ftth.model.User;
 import ftth.service.*;
-
 public class AdminController {
     private final UserManagerService um;
     private final PlanAdmin planAdmin;
     private final CustomerScreenController customerScreenController;
     private final CustomerConnectionController customerConnectionController;
     private final InventoryController inventoryController;
+    private final CapacityService capacityService;
 
     // 🔹 Constructor (Dependency Injection)
-    public AdminController(InventoryController inventoryController,PlanAdmin planAdmin,CustomerScreenController customerScreenController,CustomerConnectionController customerConnectionController,UserManagerService userManagerService){
+    public AdminController(InventoryController inventoryController,PlanAdmin planAdmin,CustomerScreenController customerScreenController,CustomerConnectionController customerConnectionController,UserManagerService userManagerService,CapacityService capacityService){
         this.um=userManagerService;
         this.customerScreenController = customerScreenController;
         this.customerConnectionController=customerConnectionController;
         this.planAdmin=planAdmin;
         this.inventoryController=inventoryController;
+        this.capacityService=capacityService;
     }
 
     // 🔹 MAIN HANDLER (NO STATIC ❌)
@@ -108,14 +109,7 @@ private void doInventory(Scanner sc) {
 }
 
     private void doCapacity(Scanner sc) {
-
-    System.out.println("\n--- Capacity Dashboard ---");
-
-    int[] pincodes = {560001, 560002, 110001};
-
-    // 🔥 call service
-   
-
+    capacityService.showCapacityDashboard();
     System.out.print("\nPress Enter to continue...");
     sc.nextLine();
 }

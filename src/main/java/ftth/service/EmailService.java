@@ -309,7 +309,7 @@ public void sendPlanAdminEmail(String action,
     String body =
         "ADMIN ACTION PERFORMED\n\n" +
         "Action      : " + action + "\n" +
-        "Plan Code   : " + plan.getPlanCode() + "\n" +
+        "Plan Name   : " + plan.getPlanName() + "\n" +
         "Plan Name   : " + plan.getPlanName() + "\n" +
         "OLT Type    : " + plan.getOltType() + "\n" +
         "Price       : Rs." + plan.getMonthlyPrice() + "\n" +

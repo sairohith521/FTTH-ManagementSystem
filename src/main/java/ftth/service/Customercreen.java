@@ -221,7 +221,7 @@ public class Customercreen {
         if (!ftth.checkPincode(newPin)) {
             System.out.println("  No available ports in pincode " + newPin + ".");
             System.out.println("  Sending alert to OLT provider...");
-            email.sendNoOLTEmail(newPin);
+            email.sendOltCapacityAlert(newPin, "ALL");
             return;
         }
 
