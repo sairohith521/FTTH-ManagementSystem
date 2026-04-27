@@ -57,10 +57,12 @@ public void createConnection(AddConnectionRequest req,Long currentUserId) {
 
     if (serviceArea == null) {
          System.out.println("Service is not available in this pincode.");
+         return;
     }
 
     if (!serviceArea.isActive()) {
         System.out.println("Service area is currently inactive.");
+        return;
     }
 
     // =================================
@@ -128,7 +130,10 @@ public void updateCustomerConnection(CustomerConnection connection,
 
     // 1️⃣ Validate new service area
     ServiceArea newArea =serviceAreaService.getActiveServiceArea(newPincode);
-    if(newArea==null)System.out.println("Service not Available..");
+    if(newArea==null){
+        System.out.println("Service not Available..");
+        return;
+    }
 
     // 2️⃣ Allocate new port
     Long newPortId =inventoryService.allocatePort(newArea.getServiceAreaId(),oltType );
@@ -173,28 +178,33 @@ public void changePlan(Long connectionId,
         throw new RuntimeException("Connection not active or not found");
     }
 
-    // 3️⃣ Update plan
+    Plan oldPlan = planService.findPlanById(connection.getPlanId());
+
+    // 3️⃣ If OLT type changes, reallocate port
+    if (!oldPlan.getOltType().equals(newPlan.getOltType())) {
+        Long newPortId = inventoryService.allocatePort(
+            connection.getServiceAreaId(), newPlan.getOltType()
+        );
+        inventoryService.releasePort(connection.getPortId());
+        connectionRepo.updatePort(connectionId, newPortId, currentUserId);
+    }
+
+    // 4️⃣ Update plan
     connectionRepo.updatePlan(
         connectionId,
         newPlan.getPlanId(),
         currentUserId
     );
 
-    // 4️⃣ Optional: Notify customer
-    
-    Plan oldPlan =planService.findPlanById(connection.getPlanId());
-
-    // ✅ Get customer (needed for email)
+    // 5️⃣ Notify customer
     Customer customer =customerRepo.findById(connection.getCustomerId());
 
-    
     email.sendPlanChangeEmail(
         customer,
         connection,
         oldPlan,
         newPlan
     );
-
 }
 public void disconnect(Long connectionId, Long currentUserId) {
 

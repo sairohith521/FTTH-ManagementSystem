@@ -2,7 +2,6 @@ package ftth.controller;
 import java.util.Scanner;
 import ftth.model.User;
 import ftth.service.*;
-
 public class AdminController {
     private final UserManagerService um;
     private final PlanAdmin planAdmin;
@@ -113,6 +112,8 @@ private void doInventory(Scanner sc) {
 
     System.out.println("\n--- Capacity Dashboard ---");
     capacityService.showCapacityDashboard();
+    System.out.print("\nPress Enter to continue...");
+    sc.nextLine();
 }
 
    void doPlanAdmin(Scanner sc,User currentUser) {

@@ -11,13 +11,15 @@ public class CustomerScreenController {
     private final CustomerConnectionService customerConnectionService;
     private final ServiceAreaService serviceAreaService;
     private final PlanService planService;
-    public CustomerScreenController(ServiceAreaService serviceAreaService,CustomerService customerService,BillService billService,EmailService emailService,PlanService planService,CustomerConnectionService customerConnectionService) {
+    private final InventoryService inventoryService;
+    public CustomerScreenController(ServiceAreaService serviceAreaService,CustomerService customerService,BillService billService,EmailService emailService,PlanService planService,CustomerConnectionService customerConnectionService,InventoryService inventoryService) {
         this.serviceAreaService = serviceAreaService;
         this.customerService = customerService;
         this.billService = billService;
         this.emailService =emailService;
         this.planService=planService;
         this.customerConnectionService=customerConnectionService;
+        this.inventoryService=inventoryService;
     }
 
     // ============================
@@ -169,14 +171,14 @@ private void changePlan(Scanner sc, Customer customer, User currentUser) {
         " | Rs." + currentPlan.getMonthlyPrice()
     );
 
-    // 3️⃣ Show available plans (excluding current)
+    // 3️⃣ Filter plans: exclude current, only show plans whose OLT type has ports in this pincode
+    Long serviceAreaId = connection.getServiceAreaId();
     List<Plan> plans = planService.getActivePlans();
-    plans.removeIf(p ->
-        p.getPlanId().equals(currentPlan.getPlanId())
-    );
+    plans.removeIf(p -> p.getPlanId().equals(currentPlan.getPlanId())
+                     || inventoryService.getAvailablePortsByType(serviceAreaId, p.getOltType()) <= 0);
 
     if (plans.isEmpty()) {
-        System.out.println("No other plans available to switch to.");
+        System.out.println("No other plans available with ports in this pincode.");
         return;
     }
 
@@ -209,20 +211,31 @@ private void changePlan(Scanner sc, Customer customer, User currentUser) {
             continue;
         }
 
+        if (inventoryService.getAvailablePortsByType(serviceAreaId, selectedPlan.getOltType()) <= 0) {
+            System.out.println("No " + selectedPlan.getOltType() + " ports available. Pick another plan.");
+            continue;
+        }
+
         break;
     }
 
     // 5️⃣ Confirm
+    boolean oltChange = !currentPlan.getOltType().equals(selectedPlan.getOltType());
     System.out.println(
         "\nChange from : " +
         currentPlan.getPlanName() +
-        " @ Rs." + currentPlan.getMonthlyPrice()
+        " @ Rs." + currentPlan.getMonthlyPrice() +
+        " (" + currentPlan.getOltType() + ")"
     );
     System.out.println(
         "Change to   : " +
         selectedPlan.getPlanName() +
-        " @ Rs." + selectedPlan.getMonthlyPrice()
+        " @ Rs." + selectedPlan.getMonthlyPrice() +
+        " (" + selectedPlan.getOltType() + ")"
     );
+    if (oltChange) {
+        System.out.println("Note: OLT type will change. Port will be reallocated.");
+    }
 
     System.out.print("Confirm change? (y/n): ");
     if (!sc.nextLine().equalsIgnoreCase("y")) {
@@ -261,18 +274,33 @@ private void moveCustomer(Scanner sc, Customer customer, User currentUser) {
         return;
     }
 
-    // 4️⃣ Read OLT type
+    // 4️⃣ Get OLT type from current plan
     Plan currplan = planService.findPlanById(planId);
     String oltType=currplan.getOltType();
 
-    // 5️⃣ Confirm
+    // 5️⃣ Validate OLT type availability at new pincode
+    ServiceArea newArea = serviceAreaService.findByPincode(newPincode);
+    if (newArea == null) {
+        System.out.println("Service not available in pincode " + newPincode + ".");
+        return;
+    }
+    int availablePorts = inventoryService.getAvailablePortsByType(newArea.getServiceAreaId(), oltType);
+    if (availablePorts <= 0) {
+        System.out.println("No " + oltType + " ports available in pincode " + newPincode + ".");
+        System.out.println("Customer's plan (" + currplan.getPlanName() + ") requires " + oltType + ".");
+        return;
+    }
+    System.out.println("OLT Type (from plan): " + oltType);
+    System.out.println("Available " + oltType + " ports in " + newPincode + " : " + availablePorts);
+
+    // 6️⃣ Confirm
     System.out.print("Confirm move? (y/n): ");
     if (!sc.nextLine().equalsIgnoreCase("y")) {
         System.out.println("Cancelled.");
         return;
     }
 
-    // 6️⃣ Delegate to service
+    // 7️⃣ Delegate to service
     customerConnectionService.updateCustomerConnection(
         connection,
         newPincode,

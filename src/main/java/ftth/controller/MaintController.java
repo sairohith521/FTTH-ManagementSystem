@@ -68,6 +68,8 @@ public class MaintController {
 
     System.out.println("\n--- Capacity Dashboard ---");
     capacityService.showCapacityDashboard();
+    System.out.print("\nPress Enter to continue...");
+    sc.nextLine();
 }
 
      void doPlanAdmin(Scanner sc,User currUser) {
