@@ -178,28 +178,33 @@ public void changePlan(Long connectionId,
         throw new RuntimeException("Connection not active or not found");
     }
 
-    // 3️⃣ Update plan
+    Plan oldPlan = planService.findPlanById(connection.getPlanId());
+
+    // 3️⃣ If OLT type changes, reallocate port
+    if (!oldPlan.getOltType().equals(newPlan.getOltType())) {
+        Long newPortId = inventoryService.allocatePort(
+            connection.getServiceAreaId(), newPlan.getOltType()
+        );
+        inventoryService.releasePort(connection.getPortId());
+        connectionRepo.updatePort(connectionId, newPortId, currentUserId);
+    }
+
+    // 4️⃣ Update plan
     connectionRepo.updatePlan(
         connectionId,
         newPlan.getPlanId(),
         currentUserId
     );
 
-    // 4️⃣ Optional: Notify customer
-    
-    Plan oldPlan =planService.findPlanById(connection.getPlanId());
-
-    // ✅ Get customer (needed for email)
+    // 5️⃣ Notify customer
     Customer customer =customerRepo.findById(connection.getCustomerId());
 
-    
     email.sendPlanChangeEmail(
         customer,
         connection,
         oldPlan,
         newPlan
     );
-
 }
 public void disconnect(Long connectionId, Long currentUserId) {
 

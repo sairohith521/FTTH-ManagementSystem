@@ -103,16 +103,24 @@ System.out.println("OLT Type (from plan): " + oltType);
 
     System.out.println("\n--- Move Customer ---");
 
-    // 1️⃣ Read customer code
-    String customerCode =InputUtil.readString(sc, "Enter Customer Code (0 to cancel): ");
+    // 1️⃣ List active connections
+    customerConnectionService.listActiveConnections();
 
-    if ("0".equals(customerCode)) {
+    // 2️⃣ Read connection ID
+    long connectionId = InputUtil.readLong(sc, "Enter Connection ID (0 to cancel): ");
+
+    if (connectionId == 0) {
         System.out.println("Cancelled.");
         return;
     }
 
-    // 2️⃣ Fetch active connection
-    CustomerConnection connection =customerConnectionService.getActiveConnectionByCustomerCode(customerCode);
+    // 3️⃣ Fetch active connection
+    CustomerConnection connection = customerConnectionService.getConnectionById(connectionId);
+
+    if (connection == null || !connection.isActive()) {
+        System.out.println("No active connection found for ID " + connectionId + ".");
+        return;
+    }
 
     if (connection == null) {
         System.out.println("No active connection found.");
@@ -130,18 +138,33 @@ System.out.println("OLT Type (from plan): " + oltType);
         return;
     }
 
-    // 4️⃣ Read OLT type
+    // 4️⃣ Get OLT type from current plan
     Plan currplan = planService.findPlanById(planId);
     String oltType=currplan.getOltType();
 
-    // 5️⃣ Confirm
+    // 5️⃣ Validate OLT type availability at new pincode
+    ServiceArea newArea = serviceAreaService.findByPincode(newPincode);
+    if (newArea == null) {
+        System.out.println("Service not available in pincode " + newPincode + ".");
+        return;
+    }
+    int availablePorts = inventoryService.getAvailablePortsByType(newArea.getServiceAreaId(), oltType);
+    if (availablePorts <= 0) {
+        System.out.println("No " + oltType + " ports available in pincode " + newPincode + ".");
+        System.out.println("Customer's plan (" + currplan.getPlanName() + ") requires " + oltType + ".");
+        return;
+    }
+    System.out.println("OLT Type (from plan): " + oltType);
+    System.out.println("Available " + oltType + " ports in " + newPincode + " : " + availablePorts);
+
+    // 6️⃣ Confirm
     System.out.print("Confirm move? (y/n): ");
     if (!sc.nextLine().equalsIgnoreCase("y")) {
         System.out.println("Cancelled.");
         return;
     }
 
-    // 6️⃣ Delegate to service
+    // 7️⃣ Delegate to service
     customerConnectionService.updateCustomerConnection(
         connection,
         newPincode,
@@ -155,21 +178,22 @@ public void doChangePlan(Scanner sc, User currentUser) {
 
     System.out.println("\n--- Change Service ---");
 
-    // 1️⃣ Read customer code
-    String customerCode =
-        InputUtil.readString(sc, "Enter Customer Code (0 to cancel): ");
+    // 1️⃣ List active connections
+    customerConnectionService.listActiveConnections();
 
-    if ("0".equals(customerCode)) {
+    // 2️⃣ Read connection ID
+    long connectionId = InputUtil.readLong(sc, "Enter Connection ID (0 to cancel): ");
+
+    if (connectionId == 0) {
         System.out.println("Cancelled.");
         return;
     }
 
-    // 2️⃣ Get active connection
-    CustomerConnection connection =
-        customerConnectionService.getActiveConnectionByCustomerCode(customerCode);
+    // 3️⃣ Get active connection
+    CustomerConnection connection = customerConnectionService.getConnectionById(connectionId);
 
-    if (connection == null) {
-        System.out.println("No active connection found.");
+    if (connection == null || !connection.isActive()) {
+        System.out.println("No active connection found for ID " + connectionId + ".");
         return;
     }
 
@@ -184,12 +208,14 @@ public void doChangePlan(Scanner sc, User currentUser) {
         " | Rs." + currentPlan.getMonthlyPrice()
     );
 
-    // 4️⃣ Show available plans (excluding current)
+    // 4️⃣ Filter plans: exclude current, only show plans whose OLT type has ports in this pincode
+    Long serviceAreaId = connection.getServiceAreaId();
     List<Plan> plans = planService.getActivePlans();
-    plans.removeIf(p -> p.getPlanId().equals(currentPlan.getPlanId()));
+    plans.removeIf(p -> p.getPlanId().equals(currentPlan.getPlanId())
+                     || inventoryService.getAvailablePortsByType(serviceAreaId, p.getOltType()) <= 0);
 
     if (plans.isEmpty()) {
-        System.out.println("No other plans available to switch to.");
+        System.out.println("No other plans available with ports in this pincode.");
         return;
     }
 
@@ -199,7 +225,8 @@ public void doChangePlan(Scanner sc, User currentUser) {
             p.getPlanId() + ". " +
             p.getPlanName() +
             " | " + p.getSpeedLabel() +
-            " | Rs." + p.getMonthlyPrice()
+            " | Rs." + p.getMonthlyPrice() +
+            " | OLT: " + p.getOltType()
         );
     }
 
@@ -219,18 +246,29 @@ public void doChangePlan(Scanner sc, User currentUser) {
             continue;
         }
 
+        if (inventoryService.getAvailablePortsByType(serviceAreaId, selectedPlan.getOltType()) <= 0) {
+            System.out.println("No " + selectedPlan.getOltType() + " ports available. Pick another plan.");
+            continue;
+        }
+
         break;
     }
 
     // 6️⃣ Confirm
+    boolean oltChange = !currentPlan.getOltType().equals(selectedPlan.getOltType());
     System.out.println(
         "\nChange from : " + currentPlan.getPlanName() +
-        " @ Rs." + currentPlan.getMonthlyPrice()
+        " @ Rs." + currentPlan.getMonthlyPrice() +
+        " (" + currentPlan.getOltType() + ")"
     );
     System.out.println(
         "Change to   : " + selectedPlan.getPlanName() +
-        " @ Rs." + selectedPlan.getMonthlyPrice()
+        " @ Rs." + selectedPlan.getMonthlyPrice() +
+        " (" + selectedPlan.getOltType() + ")"
     );
+    if (oltChange) {
+        System.out.println("Note: OLT type will change. Port will be reallocated.");
+    }
 
     System.out.print("Confirm change? (y/n): ");
     if (!sc.nextLine().equalsIgnoreCase("y")) {
@@ -254,15 +292,13 @@ public void doDisconnect(Scanner sc, User currentUser) {
     // 1️⃣ List active connections (optional helper)
     customerConnectionService.listActiveConnections();
 
-    // 2️⃣ Read connection id
-   String customerCode =
-    InputUtil.readString(sc, "Enter Customer Code (or 0 to cancel): ");
+    // 2️⃣ Read connection ID
+    long connectionId = InputUtil.readLong(sc, "Enter Connection ID (0 to cancel): ");
 
-if ("0".equals(customerCode)) {
-    System.out.println("Cancelled.");
-    return;
-}
-Long connectionId=customerConnectionService.findActiveConnectionByCustomerCode(customerCode);
+    if (connectionId == 0) {
+        System.out.println("Cancelled.");
+        return;
+    }
 
     // 3️⃣ Fetch connection
     CustomerConnection connection =

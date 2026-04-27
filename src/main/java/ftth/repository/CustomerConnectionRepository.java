@@ -196,6 +196,30 @@ public void updatePlan(Long connectionId, Long newPlanId, Long updatedBy) {
     }
 
     // ===============================
+    // UPDATE (Change Port)
+    // ===============================
+    private static final String UPDATE_PORT_SQL =
+        "UPDATE customer_connections " +
+        "SET port_id = ?, updated_by = ? " +
+        "WHERE connection_id = ? AND connection_status = 'ACTIVE'";
+
+public void updatePort(Long connectionId, Long newPortId, Long updatedBy) {
+
+        try (Connection conn = DbConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(UPDATE_PORT_SQL)) {
+
+            ps.setLong(1, newPortId);
+            ps.setLong(2, updatedBy);
+            ps.setLong(3, connectionId);
+
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating port", e);
+        }
+    }
+
+    // ===============================
     // DELETE (SOFT) → DISCONNECT
     // ===============================
     private static final String DISCONNECT_SQL =

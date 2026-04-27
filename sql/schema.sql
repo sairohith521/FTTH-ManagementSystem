@@ -222,7 +222,10 @@ CREATE TABLE email_logs (
         'ORDER_CONFIRMATION',
         'BILL',
         'OLT_ALERT',
-        'DISCONNECT'
+        'DISCONNECT',
+        'SERVICE_MOVE',
+        'PLAN_CHANGE',
+        'PLAN_ADMIN'
     ) NOT NULL,
     recipient_email VARCHAR(255) NOT NULL,
     subject VARCHAR(255) NOT NULL,
