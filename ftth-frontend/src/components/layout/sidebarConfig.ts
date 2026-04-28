@@ -2,15 +2,16 @@ import type { Role } from "../../types/roles";
 
 export const sidebarItems: {
   label: string;
+  icon: string;
   path: string;
   roles: Role[];
 }[] = [
-  { label: "Dashboard", path: "/dashboard", roles: ["ADMIN", "CSR", "MAINT"] },
-  { label: "Connections", path: "/connections", roles: ["ADMIN", "CSR"] },
-  { label: "Customers", path: "/customers", roles: ["ADMIN", "CSR"] },
-  { label: "Inventory", path: "/inventory", roles: ["ADMIN"] },
-  { label: "Plan Admin", path: "/plans", roles: ["ADMIN"] },
-  { label: "Capacity", path: "/capacity", roles: ["ADMIN", "MAINT"] },
-  { label: "Users", path: "/users", roles: ["ADMIN"] },
-  { label: "Maintenance", path: "/maintenance", roles: ["ADMIN", "MAINT"] },
+  { label: "Dashboard",   icon: "📊", path: "/dashboard",   roles: ["ADMIN", "CSR", "MAINT"] },
+  { label: "Connections",  icon: "🔗", path: "/connections",  roles: ["ADMIN", "CSR"] },
+  { label: "Customers",   icon: "👥", path: "/customers",   roles: ["ADMIN", "CSR"] },
+  { label: "Inventory",   icon: "🗄️", path: "/inventory",   roles: ["ADMIN"] },
+  { label: "Plan Admin",  icon: "📋", path: "/plans",       roles: ["ADMIN"] },
+  { label: "Capacity",    icon: "📈", path: "/capacity",    roles: ["ADMIN", "MAINT"] },
+  { label: "Users",       icon: "🔑", path: "/users",       roles: ["ADMIN"] },
+  { label: "Maintenance", icon: "🔧", path: "/maintenance", roles: ["ADMIN", "MAINT"] },
 ];

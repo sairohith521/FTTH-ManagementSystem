@@ -1,5 +1,6 @@
 package ftth.api.controller;
 
+import ftth.config.DbConnection;
 import ftth.model.InventoryDetails;
 import ftth.model.Olt;
 import ftth.model.dtos.OltInventoryDTO;
@@ -9,6 +10,10 @@ import ftth.service.InventoryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,5 +126,41 @@ public class InventoryApiController {
         config.put("maxSplitters", service.getMaxSplitters());
         config.put("portsPerSplitter", service.getPortsPerSplitter());
         return config;
+    }
+
+    @GetMapping("/olts/{oltCode}/ports")
+    public ResponseEntity<List<Map<String, Object>>> getPortDetails(@PathVariable(value = "oltCode") String oltCode) {
+
+        String sql =
+            "SELECT s.splitter_number, p.port_number, p.port_status, c.customer_code " +
+            "FROM ports p " +
+            "JOIN splitters s ON s.splitter_id = p.splitter_id " +
+            "JOIN olts o ON o.olt_id = s.olt_id " +
+            "LEFT JOIN customer_connections cc ON cc.port_id = p.port_id AND cc.connection_status = 'ACTIVE' " +
+            "LEFT JOIN customers c ON c.customer_id = cc.customer_id " +
+            "WHERE o.olt_code = ? AND s.is_active = TRUE " +
+            "ORDER BY s.splitter_number, p.port_number";
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+
+        try (Connection con = DbConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, oltCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("splitterNumber", rs.getInt("splitter_number"));
+                    row.put("portNumber", rs.getInt("port_number"));
+                    row.put("portStatus", rs.getString("port_status"));
+                    row.put("customerCode", rs.getString("customer_code"));
+                    rows.add(row);
+                }
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+
+        return ResponseEntity.ok(rows);
     }
 }
