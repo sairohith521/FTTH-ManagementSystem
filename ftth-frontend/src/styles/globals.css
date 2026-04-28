@@ -1,0 +1,141 @@
+/* =====================================================
+   Global Styles – FTTH Frontend
+   Purpose:
+   - Global typography
+   - Global background
+   - Base HTML element styling
+   - Tailwind v4 integration
+===================================================== */
+
+/* ---------------------------------
+   Tailwind CSS (v4)
+---------------------------------- */
+@import "tailwindcss";
+
+/* ---------------------------------
+   Global Reset
+---------------------------------- */
+* {
+  box-sizing: border-box;
+}
+
+/* ---------------------------------
+   Body & Root Defaults
+---------------------------------- */
+body {
+  @apply bg-background text-textPrimary font-sans text-sm;
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* ---------------------------------
+   Typography Rules
+---------------------------------- */
+
+/* Page Title */
+h1 {
+  @apply text-[22px] font-semibold;
+}
+
+/* Section Header */
+h2 {
+  @apply text-[16px] font-semibold;
+}
+
+/* Sub-section Header */
+h3 {
+  @apply text-[14px] font-semibold;
+}
+
+/* Paragraph text */
+p {
+  @apply text-sm text-textPrimary;
+}
+
+/* Muted text */
+.text-muted {
+  @apply text-textSecondary;
+}
+
+/* ---------------------------------
+   Links
+---------------------------------- */
+a {
+  @apply text-primary no-underline;
+}
+
+a:hover {
+  @apply underline;
+}
+
+/* ---------------------------------
+   Form Elements (Base Only)
+   NOTE:
+   Actual styles are defined in
+   Input / Select components
+---------------------------------- */
+input,
+select,
+textarea {
+  @apply text-sm font-sans;
+}
+
+/* ---------------------------------
+   Tables (Base Defaults)
+---------------------------------- */
+table {
+  @apply w-full border-collapse;
+}
+
+th {
+  @apply text-left text-[13px] font-semibold text-textSecondary;
+}
+
+td {
+  @apply text-sm text-textPrimary;
+}
+
+/* ---------------------------------
+   Scrollbar (Optional, Clean UI)
+---------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* ---------------------------------
+   Approved Utility Classes
+---------------------------------- */
+
+/* Card container */
+.ui-card {
+  @apply bg-white border border-border rounded-md p-5;
+}
+
+/* Page wrapper spacing */
+.page-container {
+  @apply p-5 space-y-6;
+}
+
+/* Section divider */
+.section-divider {
+  @apply border-b border-border pb-2 mb-4;
+}
+
+/* Status text */
+.text-error {
+  @apply text-error text-sm;
+}
+
+.text-success {
+  @apply text-success text-sm;
+}

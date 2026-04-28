@@ -1,0 +1,1 @@
+export const currentRole: "ADMIN" | "CSR" | "MAINT" = "ADMIN";
