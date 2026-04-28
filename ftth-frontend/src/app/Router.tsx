@@ -27,7 +27,7 @@ export default function AppRouter() {
         <Route path="/maintenance" element={<Maintenance />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/dashboard" />} />
+      <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );
 }

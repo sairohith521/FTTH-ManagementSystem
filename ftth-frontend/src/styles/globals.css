@@ -13,6 +13,27 @@
 @import "tailwindcss";
 
 /* ---------------------------------
+   Theme Tokens (Tailwind v4)
+---------------------------------- */
+@theme {
+  --color-background: #f8f9fb;
+  --color-surface: #ffffff;
+  --color-primary: #2563eb;
+  --color-primaryHover: #1d4ed8;
+  --color-border: #e2e8f0;
+  --color-textPrimary: #1e293b;
+  --color-textSecondary: #64748b;
+  --color-error: #dc2626;
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-danger: #dc2626;
+  --color-dangerHover: #b91c1c;
+  --color-sidebarBg: #1e293b;
+  --color-sidebarText: #cbd5e1;
+  --color-sidebarActive: #2563eb;
+}
+
+/* ---------------------------------
    Global Reset
 ---------------------------------- */
 * {
@@ -31,28 +52,22 @@ body {
 /* ---------------------------------
    Typography Rules
 ---------------------------------- */
-
-/* Page Title */
 h1 {
   @apply text-[22px] font-semibold;
 }
 
-/* Section Header */
 h2 {
   @apply text-[16px] font-semibold;
 }
 
-/* Sub-section Header */
 h3 {
   @apply text-[14px] font-semibold;
 }
 
-/* Paragraph text */
 p {
   @apply text-sm text-textPrimary;
 }
 
-/* Muted text */
 .text-muted {
   @apply text-textSecondary;
 }
@@ -70,9 +85,6 @@ a:hover {
 
 /* ---------------------------------
    Form Elements (Base Only)
-   NOTE:
-   Actual styles are defined in
-   Input / Select components
 ---------------------------------- */
 input,
 select,
@@ -96,7 +108,7 @@ td {
 }
 
 /* ---------------------------------
-   Scrollbar (Optional, Clean UI)
+   Scrollbar
 ---------------------------------- */
 ::-webkit-scrollbar {
   width: 8px;
@@ -115,23 +127,18 @@ td {
 /* ---------------------------------
    Approved Utility Classes
 ---------------------------------- */
-
-/* Card container */
 .ui-card {
-  @apply bg-white border border-border rounded-md p-5;
+  @apply bg-surface border border-border rounded-md p-5;
 }
 
-/* Page wrapper spacing */
 .page-container {
   @apply p-5 space-y-6;
 }
 
-/* Section divider */
 .section-divider {
   @apply border-b border-border pb-2 mb-4;
 }
 
-/* Status text */
 .text-error {
   @apply text-error text-sm;
 }
