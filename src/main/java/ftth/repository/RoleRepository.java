@@ -13,7 +13,7 @@ public class RoleRepository {
     // 🔹 Get roleId by roleCode
     public Long findRoleIdByCode(String roleCode) {
 
-        String sql = "SELECT role_id FROM role WHERE role_code = ?";
+        String sql = "SELECT role_id FROM roles WHERE role_code = ?";
 
         try (Connection con = DbConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -37,7 +37,7 @@ public class RoleRepository {
 
         List<String> roles = new ArrayList<>();
 
-        String sql = "SELECT role_code FROM role";
+        String sql = "SELECT role_code FROM roles";
 
         try (Connection con = DbConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);

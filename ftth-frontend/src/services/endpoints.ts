@@ -33,4 +33,5 @@ export const ENDPOINTS = {
 
   // Users
   USERS: "/api/users",
+  USER_BY_USERNAME: (username: string) => `/api/users/${username}`,
 };
