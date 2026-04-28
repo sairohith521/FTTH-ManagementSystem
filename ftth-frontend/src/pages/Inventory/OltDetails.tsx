@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { inventoryService } from "../../services/inventoryService";
-import type { OltInventoryDTO, OltDetail } from "../../types/models";
+import type { OltInventoryDTO, OltDetail, PortDetail } from "../../types/models";
 import Card from "../../components/ui/Card";
 import Select from "../../components/ui/Select";
+import Input from "../../components/ui/Input";
 import Table from "../../components/ui/Table";
 import Badge from "../../components/ui/Badge";
 import Loader from "../../components/ui/Loader";
@@ -13,6 +14,7 @@ export default function OltDetails() {
   const [olts, setOlts] = useState<OltInventoryDTO[]>([]);
   const [selectedOlt, setSelectedOlt] = useState("");
   const [details, setDetails] = useState<OltDetail | null>(null);
+  const [ports, setPorts] = useState<PortDetail[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -20,15 +22,31 @@ export default function OltDetails() {
   }, []);
 
   useEffect(() => {
-    if (!pincode) { setOlts([]); setSelectedOlt(""); setDetails(null); return; }
+    if (!pincode) { setOlts([]); setSelectedOlt(""); setDetails(null); setPorts([]); return; }
+    if (!pincodes.includes(pincode)) { setOlts([]); setSelectedOlt(""); setDetails(null); setPorts([]); return; }
     inventoryService.getOltsByPincode(pincode).then(setOlts).catch(() => {});
-  }, [pincode]);
+  }, [pincode, pincodes]);
 
   useEffect(() => {
-    if (!selectedOlt) { setDetails(null); return; }
+    if (!selectedOlt) { setDetails(null); setPorts([]); return; }
     setLoading(true);
-    inventoryService.getOltDetails(selectedOlt).then(setDetails).catch(() => {}).finally(() => setLoading(false));
+    Promise.all([
+      inventoryService.getOltDetails(selectedOlt),
+      inventoryService.getOltPorts(selectedOlt),
+    ])
+      .then(([d, p]) => { setDetails(d); setPorts(p); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [selectedOlt]);
+
+  // Group ports by splitter number
+  const splitterMap = new Map<number, PortDetail[]>();
+  for (const p of ports) {
+    const list = splitterMap.get(p.splitterNumber) || [];
+    list.push(p);
+    splitterMap.set(p.splitterNumber, list);
+  }
+  const splitterNumbers = Array.from(splitterMap.keys()).sort((a, b) => a - b);
 
   const splitterColumns = [
     { key: "splitterNumber", header: "Splitter #" },
@@ -48,12 +66,18 @@ export default function OltDetails() {
       <h2 className="mb-4">OLT Details</h2>
       <div className="flex gap-4 mb-4 flex-wrap">
         <div className="w-48">
-          <Select
+          <Input
             label="Pincode"
             value={pincode}
             onChange={(e) => { setPincode(e.target.value); setSelectedOlt(""); }}
-            options={pincodes.map((p) => ({ value: p, label: p }))}
+            placeholder="Type or pick..."
+            list="olt-details-pincode-list"
           />
+          <datalist id="olt-details-pincode-list">
+            {pincodes.map((p) => (
+              <option key={p} value={p} />
+            ))}
+          </datalist>
         </div>
         {olts.length > 0 && (
           <div className="w-56">
@@ -86,8 +110,45 @@ export default function OltDetails() {
 
           <div className="section-divider" />
 
-          <h3>Splitter Breakdown</h3>
+          <h3>Splitter Summary</h3>
           <Table columns={splitterColumns} data={details.splitters} keyField="splitterNumber" />
+
+          {splitterNumbers.length > 0 && (
+            <>
+              <div className="section-divider" />
+              <h3>Port Allocation</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {splitterNumbers.map((splNum) => {
+                  const splPorts = splitterMap.get(splNum) || [];
+                  return (
+                    <div key={splNum} className="border border-border rounded-md overflow-hidden">
+                      <div className="bg-sidebarBg text-white text-sm font-medium px-3 py-2">
+                        Splitter {splNum}
+                      </div>
+                      <div className="divide-y divide-border">
+                        {splPorts.map((port) => {
+                          const assigned = port.portStatus === "ASSIGNED";
+                          return (
+                            <div
+                              key={port.portNumber}
+                              className={`flex items-center justify-between px-3 py-2 text-sm ${
+                                assigned ? "bg-red-50" : "bg-green-50"
+                              }`}
+                            >
+                              <span className="font-medium">Port {port.portNumber}</span>
+                              <span className={`text-xs font-medium ${assigned ? "text-error" : "text-success"}`}>
+                                {assigned ? port.customerCode || "ASSIGNED" : "AVAILABLE"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
     </Card>
