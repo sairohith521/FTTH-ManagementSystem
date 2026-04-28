@@ -1,12 +1,21 @@
+import { Outlet, Navigate } from "react-router-dom";
 import Sidebar from "../components/layout/Sidebar";
-import { Outlet } from "react-router-dom";
+import Header from "../components/layout/Header";
+import { useAuth } from "../context/AuthContext";
 
 export default function AppLayout() {
+  const { isLoggedIn } = useAuth();
+
+  if (!isLoggedIn) return <Navigate to="/login" />;
+
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div className="flex h-screen">
       <Sidebar />
-      <div style={{ flex: 1, padding: 20 }}>
-        <Outlet />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
