@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -170,11 +171,13 @@ public boolean deleteUser(String username) {
 
         return ps.executeUpdate() > 0;
 
+    } catch (SQLIntegrityConstraintViolationException e) {
+        System.out.println("Cannot delete user '" + username + "': referenced by existing records.");
+        return false;
     } catch (Exception e) {
         e.printStackTrace();
+        return false;
     }
-
-    return false;
 }
 private static final String FIND_BY_USERNAME_SQL =
         "SELECT user_id, username, password_hash, role_id, is_active, created_at " +
