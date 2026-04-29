@@ -249,6 +249,9 @@ public void disconnect(Long connectionId, LocalDate date, Long updatedBy) {
     // ===============================
 private CustomerConnection mapRow(ResultSet rs) throws SQLException {
 
+        java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+        java.sql.Timestamp updatedAt = rs.getTimestamp("updated_at");
+
         return new CustomerConnection(
             rs.getLong("connection_id"),
             rs.getLong("customer_id"),
@@ -257,14 +260,12 @@ private CustomerConnection mapRow(ResultSet rs) throws SQLException {
             rs.getLong("service_area_id"),
             ConnectionStatus.valueOf(rs.getString("connection_status")),
             rs.getDate("activated_on").toLocalDate(),
-            rs.getDate("disconnected_on") != null
-                ? rs.getDate("disconnected_on").toLocalDate()
-                : null,
+            rs.getDate("disconnected_on") != null ? rs.getDate("disconnected_on").toLocalDate() : null,
             rs.getInt("billing_day"),
             rs.getLong("created_by"),
             rs.getLong("updated_by"),
-            rs.getTimestamp("created_at").toLocalDateTime(),
-            rs.getTimestamp("updated_at").toLocalDateTime()
+            createdAt != null ? createdAt.toLocalDateTime() : null,
+            updatedAt != null ? updatedAt.toLocalDateTime() : null
         );
     }
 public String[] findConnection(long connectionId) {

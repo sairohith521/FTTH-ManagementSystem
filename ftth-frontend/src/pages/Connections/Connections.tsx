@@ -5,6 +5,7 @@ import {
   Field, inputStyle, primaryBtn, cancelBtn, errText,
   focusBorder, blurBorder, thStyle, tdStyle,
 } from "../Users/UsersShared";
+import Disconnect from "./Disconnect";
 
 interface Plan {
   planId: number;
@@ -31,7 +32,7 @@ interface ActiveConnection {
   serviceAreaId: number;
 }
 
-type View = "menu" | "new-install" | "change";
+type View = "menu" | "new-install" | "change" | "disconnect";
 
 const cardStyle: React.CSSProperties = {
   background: "#ffffff",
@@ -56,6 +57,7 @@ export default function Connections() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [pincodes, setPincodes] = useState<string[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+  const [niPlanSearch, setNiPlanSearch] = useState("");
   const [niForm, setNiForm] = useState({ customerName: "", email: "", salary: "", pincode: "" });
   const [niLoading, setNiLoading] = useState(false);
   const [niDataLoading, setNiDataLoading] = useState(false);
@@ -68,8 +70,11 @@ export default function Connections() {
   const [connsLoading, setConnsLoading] = useState(false);
   const [connsError, setConnsError] = useState("");
   const [selectedConn, setSelectedConn] = useState<ActiveConnection | null>(null);
+  const [cpConnSearch, setCpConnSearch] = useState("");
+  const [cpConnSearchBy, setCpConnSearchBy] = useState<"name" | "code">("name");
   const [availPlans, setAvailPlans] = useState<Plan[]>([]);
   const [availPlansLoading, setAvailPlansLoading] = useState(false);
+  const [cpPlanSearch, setCpPlanSearch] = useState("");
   const [selectedNewPlanId, setSelectedNewPlanId] = useState<number | null>(null);
   const [cpLoading, setCpLoading] = useState(false);
   const [cpError, setCpError] = useState("");
@@ -95,6 +100,8 @@ export default function Connections() {
       setSelectedConn(null);
       setAvailPlans([]);
       setSelectedNewPlanId(null);
+      setCpConnSearch("");
+      setCpPlanSearch("");
       api.get<ActiveConnection[]>(ENDPOINTS.CONNECTION_ACTIVE)
         .then(setActiveConns)
         .catch((err) => setConnsError(err instanceof Error ? err.message : "Failed to load connections."))
@@ -119,8 +126,8 @@ export default function Connections() {
   const resetNi = () => {
     setNiForm({ customerName: "", email: "", salary: "", pincode: "" });
     setSelectedPlanId(null);
+    setNiPlanSearch("");
     setNiError("");
-    setNiSuccess("");
   };
 
   const handleNewInstall = async (e: React.FormEvent) => {
@@ -139,8 +146,8 @@ export default function Connections() {
         planId: plan.planId,
         oltType: plan.oltType,
       });
-      setNiSuccess("Connection created successfully.");
       resetNi();
+      setNiSuccess("Connection created successfully.");
     } catch (err: unknown) {
       setNiError(err instanceof Error ? err.message : "Failed to create connection.");
     } finally {
@@ -156,12 +163,12 @@ export default function Connections() {
     try {
       await api.post(ENDPOINTS.CONNECTION_CHANGE_PLAN(selectedConn.connectionId), { planId: selectedNewPlanId });
       setCpSuccess("Plan changed successfully.");
-      // refresh connections list
       const updated = await api.get<ActiveConnection[]>(ENDPOINTS.CONNECTION_ACTIVE);
       setActiveConns(updated);
       setSelectedConn(null);
       setAvailPlans([]);
       setSelectedNewPlanId(null);
+      setCpPlanSearch("");
     } catch (err: unknown) {
       setCpError(err instanceof Error ? err.message : "Failed to change plan.");
     } finally {
@@ -174,6 +181,7 @@ export default function Connections() {
   const goBack = () => {
     setView("menu");
     resetNi();
+    setNiSuccess("");
     setCpError("");
     setCpSuccess("");
     setSelectedConn(null);
@@ -189,7 +197,7 @@ export default function Connections() {
           { key: "new-install", label: "New Install",  desc: "Add a new customer connection",    active: true },
           { key: "move",        label: "Move",         desc: "Move customer to new pincode",      active: false },
           { key: "change",      label: "Change Plan",  desc: "Update customer service plan",      active: true },
-          { key: "disconnect",  label: "Disconnect",   desc: "Terminate customer connection",     active: false },
+          { key: "disconnect",  label: "Disconnect",   desc: "Terminate customer connection",     active: true },
         ].map((opt) => (
           <div
             key={opt.key}
@@ -215,39 +223,52 @@ export default function Connections() {
             <button onClick={goBack} style={cancelBtn}>← Back</button>
           </div>
 
-          <p style={sectionLabel}>AVAILABLE PLANS — click a row to select</p>
+          {/* Plan search */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+            <p style={{ ...sectionLabel, margin: 0 }}>AVAILABLE PLANS — click a row to select</p>
+            <input
+              value={niPlanSearch}
+              onChange={(e) => setNiPlanSearch(e.target.value)}
+              placeholder="Search plan by name..."
+              style={{ height: "30px", border: "1px solid #d1d5db", borderRadius: "3px", padding: "0 10px", fontSize: "13px", outline: "none", width: "200px" }}
+            />
+          </div>
           <div style={{ background: "#ffffff", border: "1px solid #d1d5db", borderRadius: "4px", overflow: "hidden", marginBottom: "24px" }}>
             {niDataLoading ? (
               <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>Loading plans...</p>
             ) : niDataError ? (
               <p style={{ padding: "16px", fontSize: "13px", color: "#dc2626" }}>{niDataError}</p>
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ background: "#f1f5f9" }}>
-                    {["ID", "Plan Name", "Speed", "Data", "OTTs", "OLT Type", "Price / Month"].map((h) => (
-                      <th key={h} style={thStyle}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {plans.map((p, i) => {
-                    const sel = selectedPlanId === p.planId;
-                    return (
-                      <tr key={p.planId} onClick={() => setSelectedPlanId(p.planId)}
-                        style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
-                        <td style={tdStyle}>{p.planId}</td>
-                        <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{p.planName}</td>
-                        <td style={tdStyle}>{p.speedLabel}</td>
-                        <td style={tdStyle}>{p.dataLimitLabel}</td>
-                        <td style={tdStyle}>{p.ottCount}</td>
-                        <td style={tdStyle}>{p.oltType}</td>
-                        <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {p.monthlyPrice}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div style={{ overflowY: "auto", maxHeight: "220px" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                    <tr style={{ background: "#f1f5f9" }}>
+                      {["ID", "Plan Name", "Speed", "Data", "OTTs", "OLT Type", "Price / Month"].map((h) => (
+                        <th key={h} style={thStyle}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {plans
+                      .filter((p) => p.planName.toLowerCase().includes(niPlanSearch.toLowerCase()))
+                      .map((p, i) => {
+                        const sel = selectedPlanId === p.planId;
+                        return (
+                          <tr key={p.planId} onClick={() => setSelectedPlanId(p.planId)}
+                            style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
+                            <td style={tdStyle}>{p.planId}</td>
+                            <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{p.planName}</td>
+                            <td style={tdStyle}>{p.speedLabel}</td>
+                            <td style={tdStyle}>{p.dataLimitLabel}</td>
+                            <td style={tdStyle}>{p.ottCount}</td>
+                            <td style={tdStyle}>{p.oltType}</td>
+                            <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {p.monthlyPrice}</td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
 
@@ -272,14 +293,24 @@ export default function Connections() {
                   required placeholder="Minimum Rs. 30,000" style={inputStyle} onFocus={focusBorder} onBlur={blurBorder} />
               </Field>
               <Field label="Pincode">
-                <select value={niForm.pincode} onChange={(e) => setNiForm({ ...niForm, pincode: e.target.value })}
-                  required style={inputStyle} onFocus={focusBorder} onBlur={blurBorder}>
-                  <option value="">Select pincode</option>
-                  {pincodes.map((pin) => <option key={pin} value={pin}>{pin}</option>)}
-                </select>
+                <>
+                  <input
+                    list="pincode-list"
+                    value={niForm.pincode}
+                    onChange={(e) => setNiForm({ ...niForm, pincode: e.target.value })}
+                    required
+                    placeholder="Type or select pincode"
+                    style={inputStyle}
+                    onFocus={focusBorder}
+                    onBlur={blurBorder}
+                  />
+                  <datalist id="pincode-list">
+                    {pincodes.map((pin) => <option key={pin} value={pin} />)}
+                  </datalist>
+                </>
               </Field>
               {niError   && <p style={errText}>{niError}</p>}
-              {niSuccess && <p style={{ fontSize: "13px", color: "#16a34a", margin: 0 }}>{niSuccess}</p>}
+              {niSuccess && <p style={{ fontSize: "13px", color: "#16a34a", margin: 0, fontWeight: 500 }}>✓ {niSuccess}</p>}
               <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "4px" }}>
                 <button type="button" onClick={resetNi} style={cancelBtn}>Clear</button>
                 <button type="submit" disabled={niLoading} style={primaryBtn}>
@@ -299,8 +330,26 @@ export default function Connections() {
             <button onClick={goBack} style={cancelBtn}>← Back</button>
           </div>
 
-          {/* Active Connections Table */}
-          <p style={sectionLabel}>ACTIVE CONNECTIONS — click a row to select</p>
+          {/* Active Connections — search bar */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+            <p style={{ ...sectionLabel, margin: 0 }}>ACTIVE CONNECTIONS — click a row to select</p>
+            <div style={{ display: "flex", border: "1px solid #d1d5db", borderRadius: "3px", overflow: "hidden", background: "#ffffff" }}>
+              <select
+                value={cpConnSearchBy}
+                onChange={(e) => { setCpConnSearchBy(e.target.value as "name" | "code"); setCpConnSearch(""); }}
+                style={{ height: "30px", border: "none", borderRight: "1px solid #d1d5db", padding: "0 8px", fontSize: "12px", color: "#6b7280", background: "#f9fafb", outline: "none", cursor: "pointer" }}
+              >
+                <option value="name">Name</option>
+                <option value="code">Code</option>
+              </select>
+              <input
+                value={cpConnSearch}
+                onChange={(e) => setCpConnSearch(e.target.value)}
+                placeholder={cpConnSearchBy === "name" ? "Search by name..." : "Search by code..."}
+                style={{ height: "30px", border: "none", padding: "0 10px", fontSize: "13px", outline: "none", width: "180px" }}
+              />
+            </div>
+          </div>
           <div style={{ background: "#ffffff", border: "1px solid #d1d5db", borderRadius: "4px", overflow: "hidden", marginBottom: "24px" }}>
             {connsLoading ? (
               <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>Loading connections...</p>
@@ -309,33 +358,43 @@ export default function Connections() {
             ) : activeConns.length === 0 ? (
               <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>No active connections found.</p>
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ background: "#f1f5f9" }}>
-                    {["Conn ID", "Cust Code", "Customer", "Pincode", "Current Plan", "Price", "OLT", "Port"].map((h) => (
-                      <th key={h} style={thStyle}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeConns.map((c, i) => {
-                    const sel = selectedConn?.connectionId === c.connectionId;
-                    return (
-                      <tr key={c.connectionId} onClick={() => setSelectedConn(c)}
-                        style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
-                        <td style={tdStyle}>{c.connectionId}</td>
-                        <td style={tdStyle}>{c.customerCode}</td>
-                        <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{c.fullName}</td>
-                        <td style={tdStyle}>{c.pincode}</td>
-                        <td style={tdStyle}>{c.planName}</td>
-                        <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {c.monthlyPrice}</td>
-                        <td style={tdStyle}>{c.oltType}</td>
-                        <td style={{ ...tdStyle, fontSize: "12px", color: "#6b7280" }}>{c.oltCode}/Spl{c.splitterNumber}/Port{c.portNumber}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div style={{ overflowY: "auto", maxHeight: "308px" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                    <tr style={{ background: "#f1f5f9" }}>
+                      {["Conn ID", "Cust Code", "Customer", "Pincode", "Current Plan", "Price", "OLT", "Port"].map((h) => (
+                        <th key={h} style={thStyle}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeConns
+                      .filter((c) => {
+                        const q = cpConnSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return cpConnSearchBy === "name"
+                          ? c.fullName.toLowerCase().includes(q)
+                          : c.customerCode.toLowerCase().includes(q);
+                      })
+                      .map((c, i) => {
+                        const sel = selectedConn?.connectionId === c.connectionId;
+                        return (
+                          <tr key={c.connectionId} onClick={() => setSelectedConn(c)}
+                            style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
+                            <td style={tdStyle}>{c.connectionId}</td>
+                            <td style={tdStyle}>{c.customerCode}</td>
+                            <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{c.fullName}</td>
+                            <td style={tdStyle}>{c.pincode}</td>
+                            <td style={tdStyle}>{c.planName}</td>
+                            <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {c.monthlyPrice}</td>
+                            <td style={tdStyle}>{c.oltType}</td>
+                            <td style={{ ...tdStyle, fontSize: "12px", color: "#6b7280" }}>{c.oltCode}/Spl{c.splitterNumber}/Port{c.portNumber}</td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
 
@@ -348,39 +407,51 @@ export default function Connections() {
                 </p>
               </div>
 
-              <p style={sectionLabel}>AVAILABLE PLANS — click a row to select new plan</p>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                <p style={{ ...sectionLabel, margin: 0 }}>AVAILABLE PLANS — click a row to select new plan</p>
+                <input
+                  value={cpPlanSearch}
+                  onChange={(e) => setCpPlanSearch(e.target.value)}
+                  placeholder="Search plan by name..."
+                  style={{ height: "30px", border: "1px solid #d1d5db", borderRadius: "3px", padding: "0 10px", fontSize: "13px", outline: "none", width: "180px" }}
+                />
+              </div>
               <div style={{ background: "#ffffff", border: "1px solid #d1d5db", borderRadius: "4px", overflow: "hidden", marginBottom: "20px" }}>
                 {availPlansLoading ? (
                   <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>Loading available plans...</p>
                 ) : availPlans.length === 0 ? (
                   <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>No other plans available for this service area.</p>
                 ) : (
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr style={{ background: "#f1f5f9" }}>
-                        {["ID", "Plan Name", "Speed", "Data", "OTTs", "OLT Type", "Price / Month"].map((h) => (
-                          <th key={h} style={thStyle}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {availPlans.map((p, i) => {
-                        const sel = selectedNewPlanId === p.planId;
-                        return (
-                          <tr key={p.planId} onClick={() => setSelectedNewPlanId(p.planId)}
-                            style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
-                            <td style={tdStyle}>{p.planId}</td>
-                            <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{p.planName}</td>
-                            <td style={tdStyle}>{p.speedLabel}</td>
-                            <td style={tdStyle}>{p.dataLimitLabel}</td>
-                            <td style={tdStyle}>{p.ottCount}</td>
-                            <td style={tdStyle}>{p.oltType}</td>
-                            <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {p.monthlyPrice}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div style={{ overflowY: "auto", maxHeight: "176px" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                        <tr style={{ background: "#f1f5f9" }}>
+                          {["ID", "Plan Name", "Speed", "Data", "OTTs", "OLT Type", "Price / Month"].map((h) => (
+                            <th key={h} style={thStyle}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {availPlans
+                          .filter((p) => p.planName.toLowerCase().includes(cpPlanSearch.toLowerCase()))
+                          .map((p, i) => {
+                          const sel = selectedNewPlanId === p.planId;
+                          return (
+                            <tr key={p.planId} onClick={() => setSelectedNewPlanId(p.planId)}
+                              style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
+                              <td style={tdStyle}>{p.planId}</td>
+                              <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{p.planName}</td>
+                              <td style={tdStyle}>{p.speedLabel}</td>
+                              <td style={tdStyle}>{p.dataLimitLabel}</td>
+                              <td style={tdStyle}>{p.ottCount}</td>
+                              <td style={tdStyle}>{p.oltType}</td>
+                              <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {p.monthlyPrice}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
 
@@ -414,6 +485,8 @@ export default function Connections() {
           )}
         </div>
       )}
+      {/* ── DISCONNECT ── */}
+      {view === "disconnect" && <Disconnect onBack={goBack} />}
     </div>
   );
 }

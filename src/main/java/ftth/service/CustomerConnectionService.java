@@ -226,14 +226,17 @@ public void disconnect(Long connectionId, Long currentUserId) {
         LocalDate.now(),
         currentUserId
     );
-      Customer customer =customerRepo.findById(connection.getCustomerId());
 
     // 3️⃣ Release port
     inventoryService.releasePort(connection.getPortId());
-    customer.deactivate();
 
-    // 4️⃣ Notify customer (optional)
-    email.sendDisconnectionEmail(customer, connection);;
+    // 4️⃣ Deactivate customer in DB
+    Customer customer = customerRepo.findById(connection.getCustomerId());
+    if (customer != null) {
+        customerRepo.updateStatus(customer.getCustomerId(), "INACTIVE");
+        // 5️⃣ Notify customer
+        email.sendDisconnectionEmail(customer, connection);
+    }
 }
 
 

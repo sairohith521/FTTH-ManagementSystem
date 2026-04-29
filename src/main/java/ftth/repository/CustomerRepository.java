@@ -139,7 +139,7 @@ public Customer findByCustomerCode(String customerCode) {
      public Customer findById(Long customerId) {
 
     String sql =
-        "SELECT customer_id, customer_code, full_name, email, salary, status " +
+        "SELECT customer_id, customer_code, full_name, email, salary, status, created_at " +
         "FROM customers " +
         "WHERE customer_id = ?";
 
@@ -150,14 +150,7 @@ public Customer findByCustomerCode(String customerCode) {
 
         try (ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
-                Customer c = new Customer();
-                c.setCustomerId(rs.getLong("customer_id"));
-                c.setCustomerCode(rs.getString("customer_code"));
-                c.setFullName(rs.getString("full_name"));
-                c.setEmail(rs.getString("email"));
-                c.setSalary(rs.getBigDecimal("salary"));
-                c.setStatus(CustomerStatus.valueOf(rs.getString("status")));
-                return c;
+                return mapRow(rs);
             }
         }
 
@@ -232,7 +225,8 @@ private Customer mapRow(ResultSet rs) throws SQLException {
     c.setEmail(rs.getString("email"));
     c.setSalary(rs.getBigDecimal("salary"));
     c.setStatus(CustomerStatus.valueOf(rs.getString("status")));
-    c.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+    java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+    if (createdAt != null) c.setCreatedAt(createdAt.toLocalDateTime());
 
     return c;
 }
@@ -270,6 +264,17 @@ public boolean disconnectCustomer(long customerId) {
 
     } catch (Exception e) {
         throw new RuntimeException(e);
+    }
+}
+public void updateStatus(Long customerId, String status) {
+    String sql = "UPDATE customers SET status = ? WHERE customer_id = ?";
+    try (Connection con = DbConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+        ps.setString(1, status);
+        ps.setLong(2, customerId);
+        ps.executeUpdate();
+    } catch (SQLException e) {
+        throw new RuntimeException("Error updating customer status", e);
     }
 }
 public boolean updatePlan(long customerId, long newPlanId) {
