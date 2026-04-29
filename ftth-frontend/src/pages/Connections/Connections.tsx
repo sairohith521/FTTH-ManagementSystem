@@ -31,7 +31,7 @@ interface ActiveConnection {
   serviceAreaId: number;
 }
 
-type View = "menu" | "new-install" | "change";
+type View = "menu" | "new-install" | "change" | "disconnect";
 
 const cardStyle: React.CSSProperties = {
   background: "#ffffff",
@@ -56,6 +56,8 @@ export default function Connections() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [pincodes, setPincodes] = useState<string[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+  const [niPlanSearch, setNiPlanSearch] = useState("");
+  const [niPincodeInput, setNiPincodeInput] = useState("");
   const [niForm, setNiForm] = useState({ customerName: "", email: "", salary: "", pincode: "" });
   const [niLoading, setNiLoading] = useState(false);
   const [niDataLoading, setNiDataLoading] = useState(false);
@@ -67,6 +69,7 @@ export default function Connections() {
   const [activeConns, setActiveConns] = useState<ActiveConnection[]>([]);
   const [connsLoading, setConnsLoading] = useState(false);
   const [connsError, setConnsError] = useState("");
+  const [cpSearchName, setCpSearchName] = useState("");
   const [selectedConn, setSelectedConn] = useState<ActiveConnection | null>(null);
   const [availPlans, setAvailPlans] = useState<Plan[]>([]);
   const [availPlansLoading, setAvailPlansLoading] = useState(false);
@@ -74,6 +77,17 @@ export default function Connections() {
   const [cpLoading, setCpLoading] = useState(false);
   const [cpError, setCpError] = useState("");
   const [cpSuccess, setCpSuccess] = useState("");
+
+  // ── Disconnect state ──
+  const [dcConns, setDcConns] = useState<ActiveConnection[]>([]);
+  const [dcConnsLoading, setDcConnsLoading] = useState(false);
+  const [dcConnsError, setDcConnsError] = useState("");
+  const [dcSearchName, setDcSearchName] = useState("");
+  const [dcSelected, setDcSelected] = useState<ActiveConnection | null>(null);
+  const [dcConfirming, setDcConfirming] = useState(false);
+  const [dcLoading, setDcLoading] = useState(false);
+  const [dcError, setDcError] = useState("");
+  const [dcSuccess, setDcSuccess] = useState("");
 
   // ── Load data on view change ──
   useEffect(() => {
@@ -95,10 +109,25 @@ export default function Connections() {
       setSelectedConn(null);
       setAvailPlans([]);
       setSelectedNewPlanId(null);
+      setCpSearchName("");
       api.get<ActiveConnection[]>(ENDPOINTS.CONNECTION_ACTIVE)
         .then(setActiveConns)
         .catch((err) => setConnsError(err instanceof Error ? err.message : "Failed to load connections."))
         .finally(() => setConnsLoading(false));
+    }
+
+    if (view === "disconnect") {
+      setDcConnsLoading(true);
+      setDcConnsError("");
+      setDcSelected(null);
+      setDcConfirming(false);
+      setDcError("");
+      setDcSuccess("");
+      setDcSearchName("");
+      api.get<ActiveConnection[]>(ENDPOINTS.CONNECTION_ACTIVE)
+        .then(setDcConns)
+        .catch((err) => setDcConnsError(err instanceof Error ? err.message : "Failed to load connections."))
+        .finally(() => setDcConnsLoading(false));
     }
   }, [view]);
 
@@ -119,6 +148,8 @@ export default function Connections() {
   const resetNi = () => {
     setNiForm({ customerName: "", email: "", salary: "", pincode: "" });
     setSelectedPlanId(null);
+    setNiPlanSearch("");
+    setNiPincodeInput("");
     setNiError("");
     setNiSuccess("");
   };
@@ -171,12 +202,44 @@ export default function Connections() {
 
   const selectedNewPlan = availPlans.find((p) => p.planId === selectedNewPlanId) ?? null;
 
+  const filterConns = (list: ActiveConnection[], query: string) => {
+    const q = query.toLowerCase();
+    return list.filter((c) =>
+      q === "" ||
+      c.fullName.toLowerCase().includes(q) ||
+      c.customerCode.toLowerCase().includes(q)
+    );
+  };
+
+  const handleDisconnect = async () => {
+    if (!dcSelected) return;
+    setDcLoading(true);
+    setDcError("");
+    setDcSuccess("");
+    try {
+      await api.post(ENDPOINTS.CONNECTION_DISCONNECT(dcSelected.connectionId), {});
+      setDcSuccess(`Connection #${dcSelected.connectionId} (${dcSelected.fullName}) disconnected successfully.`);
+      setDcSelected(null);
+      setDcConfirming(false);
+      const updated = await api.get<ActiveConnection[]>(ENDPOINTS.CONNECTION_ACTIVE);
+      setDcConns(updated);
+    } catch (err: unknown) {
+      setDcError(err instanceof Error ? err.message : "Failed to disconnect.");
+    } finally {
+      setDcLoading(false);
+    }
+  };
+
   const goBack = () => {
     setView("menu");
     resetNi();
     setCpError("");
     setCpSuccess("");
     setSelectedConn(null);
+    setDcSelected(null);
+    setDcConfirming(false);
+    setDcError("");
+    setDcSuccess("");
   };
 
   return (
@@ -189,7 +252,7 @@ export default function Connections() {
           { key: "new-install", label: "New Install",  desc: "Add a new customer connection",    active: true },
           { key: "move",        label: "Move",         desc: "Move customer to new pincode",      active: false },
           { key: "change",      label: "Change Plan",  desc: "Update customer service plan",      active: true },
-          { key: "disconnect",  label: "Disconnect",   desc: "Terminate customer connection",     active: false },
+          { key: "disconnect",  label: "Disconnect",   desc: "Terminate customer connection",     active: true },
         ].map((opt) => (
           <div
             key={opt.key}
@@ -215,40 +278,64 @@ export default function Connections() {
             <button onClick={goBack} style={cancelBtn}>← Back</button>
           </div>
 
+          {/* Plan search */}
+          <div style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "center" }}>
+            <input
+              value={niPlanSearch}
+              onChange={(e) => { setNiPlanSearch(e.target.value); setSelectedPlanId(null); }}
+              placeholder="Search by plan name or OLT type..."
+              style={{ ...inputStyle, width: "280px" }}
+              onFocus={focusBorder} onBlur={blurBorder}
+            />
+            {niPlanSearch && (
+              <button onClick={() => setNiPlanSearch("")} style={cancelBtn}>Clear</button>
+            )}
+          </div>
+
           <p style={sectionLabel}>AVAILABLE PLANS — click a row to select</p>
           <div style={{ background: "#ffffff", border: "1px solid #d1d5db", borderRadius: "4px", overflow: "hidden", marginBottom: "24px" }}>
             {niDataLoading ? (
               <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>Loading plans...</p>
             ) : niDataError ? (
               <p style={{ padding: "16px", fontSize: "13px", color: "#dc2626" }}>{niDataError}</p>
-            ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ background: "#f1f5f9" }}>
-                    {["ID", "Plan Name", "Speed", "Data", "OTTs", "OLT Type", "Price / Month"].map((h) => (
-                      <th key={h} style={thStyle}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {plans.map((p, i) => {
-                    const sel = selectedPlanId === p.planId;
-                    return (
-                      <tr key={p.planId} onClick={() => setSelectedPlanId(p.planId)}
-                        style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
-                        <td style={tdStyle}>{p.planId}</td>
-                        <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{p.planName}</td>
-                        <td style={tdStyle}>{p.speedLabel}</td>
-                        <td style={tdStyle}>{p.dataLimitLabel}</td>
-                        <td style={tdStyle}>{p.ottCount}</td>
-                        <td style={tdStyle}>{p.oltType}</td>
-                        <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {p.monthlyPrice}</td>
+            ) : (() => {
+              const q = niPlanSearch.toLowerCase();
+              const filtered = plans.filter((p) =>
+                q === "" || p.planName.toLowerCase().includes(q) || p.oltType.toLowerCase().includes(q)
+              );
+              return filtered.length === 0 ? (
+                <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>No plans match your search.</p>
+              ) : (
+                <div style={{ maxHeight: "210px", overflowY: filtered.length > 5 ? "auto" : "visible" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                      <tr style={{ background: "#f1f5f9" }}>
+                        {["ID", "Plan Name", "Speed", "Data", "OTTs", "OLT Type", "Price / Month"].map((h) => (
+                          <th key={h} style={thStyle}>{h}</th>
+                        ))}
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
+                    </thead>
+                    <tbody>
+                      {filtered.map((p, i) => {
+                        const sel = selectedPlanId === p.planId;
+                        return (
+                          <tr key={p.planId} onClick={() => setSelectedPlanId(p.planId)}
+                            style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
+                            <td style={tdStyle}>{p.planId}</td>
+                            <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{p.planName}</td>
+                            <td style={tdStyle}>{p.speedLabel}</td>
+                            <td style={tdStyle}>{p.dataLimitLabel}</td>
+                            <td style={tdStyle}>{p.ottCount}</td>
+                            <td style={tdStyle}>{p.oltType}</td>
+                            <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {p.monthlyPrice}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
 
           {plans.find((p) => p.planId === selectedPlanId) && (
@@ -272,11 +359,34 @@ export default function Connections() {
                   required placeholder="Minimum Rs. 30,000" style={inputStyle} onFocus={focusBorder} onBlur={blurBorder} />
               </Field>
               <Field label="Pincode">
-                <select value={niForm.pincode} onChange={(e) => setNiForm({ ...niForm, pincode: e.target.value })}
-                  required style={inputStyle} onFocus={focusBorder} onBlur={blurBorder}>
-                  <option value="">Select pincode</option>
-                  {pincodes.map((pin) => <option key={pin} value={pin}>{pin}</option>)}
-                </select>
+                <input
+                  value={niPincodeInput}
+                  onChange={(e) => {
+                    setNiPincodeInput(e.target.value);
+                    setNiForm({ ...niForm, pincode: "" });
+                  }}
+                  placeholder="Type to search pincode..."
+                  style={inputStyle}
+                  onFocus={focusBorder} onBlur={blurBorder}
+                />
+                {niPincodeInput && (() => {
+                  const matches = pincodes.filter((pin) => pin.includes(niPincodeInput));
+                  return matches.length > 0 && niForm.pincode === "" ? (
+                    <div style={{ border: "1px solid #d1d5db", borderRadius: "3px", background: "#fff", marginTop: "2px", maxHeight: "140px", overflowY: "auto" }}>
+                      {matches.map((pin) => (
+                        <div
+                          key={pin}
+                          onClick={() => { setNiForm({ ...niForm, pincode: pin }); setNiPincodeInput(pin); }}
+                          style={{ padding: "7px 10px", fontSize: "13px", cursor: "pointer", color: "#111827" }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = "#f0f9ff")}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
+                        >
+                          {pin}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
               </Field>
               {niError   && <p style={errText}>{niError}</p>}
               {niSuccess && <p style={{ fontSize: "13px", color: "#16a34a", margin: 0 }}>{niSuccess}</p>}
@@ -299,6 +409,20 @@ export default function Connections() {
             <button onClick={goBack} style={cancelBtn}>← Back</button>
           </div>
 
+          {/* Search bar — Change Plan */}
+          <div style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "center" }}>
+            <input
+              value={cpSearchName}
+              onChange={(e) => { setCpSearchName(e.target.value); setSelectedConn(null); }}
+              placeholder="Search by name or customer code..."
+              style={{ ...inputStyle, width: "280px" }}
+              onFocus={focusBorder} onBlur={blurBorder}
+            />
+            {cpSearchName && (
+              <button onClick={() => { setCpSearchName(""); }} style={cancelBtn}>Clear</button>
+            )}
+          </div>
+
           {/* Active Connections Table */}
           <p style={sectionLabel}>ACTIVE CONNECTIONS — click a row to select</p>
           <div style={{ background: "#ffffff", border: "1px solid #d1d5db", borderRadius: "4px", overflow: "hidden", marginBottom: "24px" }}>
@@ -308,35 +432,42 @@ export default function Connections() {
               <p style={{ padding: "16px", fontSize: "13px", color: "#dc2626" }}>{connsError}</p>
             ) : activeConns.length === 0 ? (
               <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>No active connections found.</p>
-            ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ background: "#f1f5f9" }}>
-                    {["Conn ID", "Cust Code", "Customer", "Pincode", "Current Plan", "Price", "OLT", "Port"].map((h) => (
-                      <th key={h} style={thStyle}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeConns.map((c, i) => {
-                    const sel = selectedConn?.connectionId === c.connectionId;
-                    return (
-                      <tr key={c.connectionId} onClick={() => setSelectedConn(c)}
-                        style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
-                        <td style={tdStyle}>{c.connectionId}</td>
-                        <td style={tdStyle}>{c.customerCode}</td>
-                        <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{c.fullName}</td>
-                        <td style={tdStyle}>{c.pincode}</td>
-                        <td style={tdStyle}>{c.planName}</td>
-                        <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {c.monthlyPrice}</td>
-                        <td style={tdStyle}>{c.oltType}</td>
-                        <td style={{ ...tdStyle, fontSize: "12px", color: "#6b7280" }}>{c.oltCode}/Spl{c.splitterNumber}/Port{c.portNumber}</td>
+            ) : (() => {
+              const filtered = filterConns(activeConns, cpSearchName);
+              return filtered.length === 0 ? (
+                <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>No connections match your search.</p>
+              ) : (
+                <div style={{ maxHeight: "294px", overflowY: filtered.length > 7 ? "auto" : "visible" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                      <tr style={{ background: "#f1f5f9" }}>
+                        {["Conn ID", "Cust Code", "Customer", "Pincode", "Current Plan", "Price", "OLT", "Port"].map((h) => (
+                          <th key={h} style={thStyle}>{h}</th>
+                        ))}
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
+                    </thead>
+                    <tbody>
+                      {filtered.map((c, i) => {
+                        const sel = selectedConn?.connectionId === c.connectionId;
+                        return (
+                          <tr key={c.connectionId} onClick={() => setSelectedConn(c)}
+                            style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
+                            <td style={tdStyle}>{c.connectionId}</td>
+                            <td style={tdStyle}>{c.customerCode}</td>
+                            <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{c.fullName}</td>
+                            <td style={tdStyle}>{c.pincode}</td>
+                            <td style={tdStyle}>{c.planName}</td>
+                            <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {c.monthlyPrice}</td>
+                            <td style={tdStyle}>{c.oltType}</td>
+                            <td style={{ ...tdStyle, fontSize: "12px", color: "#6b7280" }}>{c.oltCode}/Spl{c.splitterNumber}/Port{c.portNumber}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Available Plans for selected connection */}
@@ -355,32 +486,34 @@ export default function Connections() {
                 ) : availPlans.length === 0 ? (
                   <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>No other plans available for this service area.</p>
                 ) : (
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr style={{ background: "#f1f5f9" }}>
-                        {["ID", "Plan Name", "Speed", "Data", "OTTs", "OLT Type", "Price / Month"].map((h) => (
-                          <th key={h} style={thStyle}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {availPlans.map((p, i) => {
-                        const sel = selectedNewPlanId === p.planId;
-                        return (
-                          <tr key={p.planId} onClick={() => setSelectedNewPlanId(p.planId)}
-                            style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
-                            <td style={tdStyle}>{p.planId}</td>
-                            <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{p.planName}</td>
-                            <td style={tdStyle}>{p.speedLabel}</td>
-                            <td style={tdStyle}>{p.dataLimitLabel}</td>
-                            <td style={tdStyle}>{p.ottCount}</td>
-                            <td style={tdStyle}>{p.oltType}</td>
-                            <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {p.monthlyPrice}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div style={{ maxHeight: "168px", overflowY: availPlans.length > 3 ? "auto" : "visible" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                        <tr style={{ background: "#f1f5f9" }}>
+                          {["ID", "Plan Name", "Speed", "Data", "OTTs", "OLT Type", "Price / Month"].map((h) => (
+                            <th key={h} style={thStyle}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {availPlans.map((p, i) => {
+                          const sel = selectedNewPlanId === p.planId;
+                          return (
+                            <tr key={p.planId} onClick={() => setSelectedNewPlanId(p.planId)}
+                              style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
+                              <td style={tdStyle}>{p.planId}</td>
+                              <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{p.planName}</td>
+                              <td style={tdStyle}>{p.speedLabel}</td>
+                              <td style={tdStyle}>{p.dataLimitLabel}</td>
+                              <td style={tdStyle}>{p.ottCount}</td>
+                              <td style={tdStyle}>{p.oltType}</td>
+                              <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {p.monthlyPrice}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
 
@@ -411,6 +544,120 @@ export default function Connections() {
                 </button>
               </div>
             </>
+          )}
+        </div>
+      )}
+      {/* ── DISCONNECT ── */}
+      {view === "disconnect" && (
+        <div style={{ marginTop: "32px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+            <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#111827", margin: 0 }}>Disconnect Connection</h2>
+            <button onClick={goBack} style={cancelBtn}>← Back</button>
+          </div>
+
+          {/* Search bar — Disconnect */}
+          <div style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "center" }}>
+            <input
+              value={dcSearchName}
+              onChange={(e) => { setDcSearchName(e.target.value); setDcSelected(null); setDcConfirming(false); }}
+              placeholder="Search by name or customer code..."
+              style={{ ...inputStyle, width: "280px" }}
+              onFocus={focusBorder} onBlur={blurBorder}
+            />
+            {dcSearchName && (
+              <button onClick={() => { setDcSearchName(""); }} style={cancelBtn}>Clear</button>
+            )}
+          </div>
+
+          <p style={sectionLabel}>ACTIVE CONNECTIONS — click a row to select</p>
+          <div style={{ background: "#ffffff", border: "1px solid #d1d5db", borderRadius: "4px", overflow: "hidden", marginBottom: "24px" }}>
+            {dcConnsLoading ? (
+              <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>Loading connections...</p>
+            ) : dcConnsError ? (
+              <p style={{ padding: "16px", fontSize: "13px", color: "#dc2626" }}>{dcConnsError}</p>
+            ) : dcConns.length === 0 ? (
+              <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>No active connections found.</p>
+            ) : (() => {
+              const filtered = filterConns(dcConns, dcSearchName);
+              return filtered.length === 0 ? (
+                <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>No connections match your search.</p>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ background: "#f1f5f9" }}>
+                      {["Conn ID", "Cust Code", "Customer", "Pincode", "Plan", "Price", "OLT", "Port"].map((h) => (
+                        <th key={h} style={thStyle}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((c, i) => {
+                      const sel = dcSelected?.connectionId === c.connectionId;
+                      return (
+                        <tr key={c.connectionId}
+                          onClick={() => { setDcSelected(c); setDcConfirming(false); setDcError(""); setDcSuccess(""); }}
+                          style={{ background: sel ? "#fee2e2" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
+                          <td style={tdStyle}>{c.connectionId}</td>
+                          <td style={tdStyle}>{c.customerCode}</td>
+                          <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{c.fullName}</td>
+                          <td style={tdStyle}>{c.pincode}</td>
+                          <td style={tdStyle}>{c.planName}</td>
+                          <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {c.monthlyPrice}</td>
+                          <td style={tdStyle}>{c.oltType}</td>
+                          <td style={{ ...tdStyle, fontSize: "12px", color: "#6b7280" }}>{c.oltCode}/Spl{c.splitterNumber}/Port{c.portNumber}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              );
+            })()}
+          </div>
+
+          {dcSelected && !dcConfirming && (
+            <>
+              <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "4px", padding: "12px 16px", marginBottom: "16px" }}>
+                <p style={{ fontSize: "13px", color: "#9a3412", margin: 0 }}>
+                  Selected: <strong>{dcSelected.fullName}</strong> ({dcSelected.customerCode}) — Plan: <strong>{dcSelected.planName}</strong> @ Rs.{dcSelected.monthlyPrice}
+                </p>
+              </div>
+              {dcSuccess && <p style={{ fontSize: "13px", color: "#16a34a", marginBottom: "12px" }}>{dcSuccess}</p>}
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button onClick={() => setDcSelected(null)} style={cancelBtn}>Cancel</button>
+                <button
+                  onClick={() => setDcConfirming(true)}
+                  style={{ ...primaryBtn, background: "#dc2626" }}
+                >
+                  Disconnect
+                </button>
+              </div>
+            </>
+          )}
+
+          {dcSelected && dcConfirming && (
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "4px", padding: "16px 20px", maxWidth: "480px" }}>
+              <p style={{ fontSize: "14px", fontWeight: 600, color: "#991b1b", margin: "0 0 6px 0" }}>Confirm Disconnection</p>
+              <p style={{ fontSize: "13px", color: "#374151", margin: "0 0 4px 0" }}>Connection ID : <strong>{dcSelected.connectionId}</strong></p>
+              <p style={{ fontSize: "13px", color: "#374151", margin: "0 0 4px 0" }}>Customer : <strong>{dcSelected.fullName}</strong> ({dcSelected.customerCode})</p>
+              <p style={{ fontSize: "13px", color: "#374151", margin: "0 0 4px 0" }}>Service Area : <strong>{dcSelected.pincode}</strong></p>
+              <p style={{ fontSize: "13px", color: "#374151", margin: "0 0 16px 0" }}>Port : <strong>{dcSelected.oltCode}/Spl{dcSelected.splitterNumber}/Port{dcSelected.portNumber}</strong></p>
+              <p style={{ fontSize: "13px", color: "#dc2626", margin: "0 0 16px 0" }}>This will terminate the connection and release the port. This action cannot be undone.</p>
+              {dcError && <p style={{ fontSize: "13px", color: "#dc2626", margin: "0 0 12px 0" }}>{dcError}</p>}
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button onClick={() => setDcConfirming(false)} style={cancelBtn} disabled={dcLoading}>Cancel</button>
+                <button
+                  onClick={handleDisconnect}
+                  disabled={dcLoading}
+                  style={{ ...primaryBtn, background: "#dc2626" }}
+                >
+                  {dcLoading ? "Disconnecting..." : "Yes, Disconnect"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!dcSelected && dcSuccess && (
+            <p style={{ fontSize: "13px", color: "#16a34a" }}>{dcSuccess}</p>
           )}
         </div>
       )}
