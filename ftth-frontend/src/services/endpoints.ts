@@ -18,6 +18,10 @@ export const ENDPOINTS = {
   // Connections
   CONNECTIONS: "/api/connections",
   CONNECTION_BY_ID: (id: number) => `/api/connections/${id}`,
+  CONNECTION_NEW_INSTALL: "/api/connections/new-install",
+  CONNECTION_ACTIVE: "/api/connections/active",
+  CONNECTION_AVAILABLE_PLANS: (id: number) => `/api/connections/${id}/available-plans`,
+  CONNECTION_CHANGE_PLAN: (id: number) => `/api/connections/${id}/change-plan`,
 
   // Customers
   CUSTOMERS: "/api/customers",
