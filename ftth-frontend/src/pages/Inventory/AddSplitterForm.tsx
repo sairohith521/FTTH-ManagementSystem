@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { inventoryService } from "../../services/inventoryService";
 import type { OltInventoryDTO } from "../../types/models";
 import Card from "../../components/ui/Card";
-import Select from "../../components/ui/Select";
+import Input from "../../components/ui/Input";
 import Table from "../../components/ui/Table";
 import Button from "../../components/ui/Button";
 import Loader from "../../components/ui/Loader";
@@ -24,10 +24,10 @@ export default function AddSplitterForm({ onSuccess }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!pincode) { setOlts([]); return; }
+    if (!pincode || !pincodes.includes(pincode)) { setOlts([]); return; }
     setLoading(true);
     inventoryService.getOltsByPincode(pincode).then(setOlts).catch(() => {}).finally(() => setLoading(false));
-  }, [pincode]);
+  }, [pincode, pincodes]);
 
   const handleAdd = async (oltCode: string) => {
     setMsg("");
@@ -63,12 +63,18 @@ export default function AddSplitterForm({ onSuccess }: Props) {
     <Card>
       <h2 className="mb-4">Add Splitter to OLT</h2>
       <div className="max-w-xs mb-4">
-        <Select
+        <Input
           label="Select Pincode"
           value={pincode}
           onChange={(e) => setPincode(e.target.value)}
-          options={pincodes.map((p) => ({ value: p, label: p }))}
+          placeholder="Type or pick..."
+          list="add-splitter-pincode-list"
         />
+        <datalist id="add-splitter-pincode-list">
+          {pincodes.map((p) => (
+            <option key={p} value={p} />
+          ))}
+        </datalist>
       </div>
 
       {loading && <Loader />}

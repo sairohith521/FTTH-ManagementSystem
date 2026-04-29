@@ -3,6 +3,7 @@ import { inventoryService } from "../../services/inventoryService";
 import type { OltInventoryDTO, OltDetail, SplitterDetail } from "../../types/models";
 import Card from "../../components/ui/Card";
 import Select from "../../components/ui/Select";
+import Input from "../../components/ui/Input";
 import Table from "../../components/ui/Table";
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
@@ -28,10 +29,10 @@ export default function RemoveSplitterForm({ onSuccess }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!pincode) { setOlts([]); setSelectedOlt(""); setDetails(null); return; }
+    if (!pincode || !pincodes.includes(pincode)) { setOlts([]); setSelectedOlt(""); setDetails(null); return; }
     setLoading(true);
     inventoryService.getOltsByPincode(pincode).then(setOlts).catch(() => {}).finally(() => setLoading(false));
-  }, [pincode]);
+  }, [pincode, pincodes]);
 
   useEffect(() => {
     if (!selectedOlt) { setDetails(null); return; }
@@ -76,12 +77,18 @@ export default function RemoveSplitterForm({ onSuccess }: Props) {
       <h2 className="mb-4">Remove Splitter from OLT</h2>
       <div className="flex gap-4 mb-4 flex-wrap">
         <div className="w-48">
-          <Select
+          <Input
             label="Pincode"
             value={pincode}
             onChange={(e) => { setPincode(e.target.value); setSelectedOlt(""); }}
-            options={pincodes.map((p) => ({ value: p, label: p }))}
+            placeholder="Type or pick..."
+            list="remove-splitter-pincode-list"
           />
+          <datalist id="remove-splitter-pincode-list">
+            {pincodes.map((p) => (
+              <option key={p} value={p} />
+            ))}
+          </datalist>
         </div>
         {olts.length > 0 && (
           <div className="w-56">

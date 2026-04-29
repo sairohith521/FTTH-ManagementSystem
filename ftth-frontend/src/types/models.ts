@@ -117,6 +117,13 @@ export interface CapacityRow {
 // API Request Types
 // ===========================
 
+export interface PortDetail {
+  splitterNumber: number;
+  portNumber: number;
+  portStatus: PortStatus;
+  customerCode: string | null;
+}
+
 export interface AddOltRequest {
   pincode: string;
   oltType: string;

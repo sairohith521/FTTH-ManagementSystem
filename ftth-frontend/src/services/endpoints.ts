@@ -4,6 +4,7 @@ export const ENDPOINTS = {
   INVENTORY_OLTS: "/api/inventory/olts",
   INVENTORY_OLT_DETAILS: (oltCode: string) => `/api/inventory/olts/${oltCode}/details`,
   INVENTORY_OLT_DELETE: (oltCode: string) => `/api/inventory/olts/${oltCode}`,
+  INVENTORY_OLT_PORTS: (oltCode: string) => `/api/inventory/olts/${oltCode}/ports`,
   INVENTORY_SPLITTER_ADD: (oltCode: string) => `/api/inventory/olts/${oltCode}/splitters`,
   INVENTORY_SPLITTER_DELETE: (oltCode: string, num: number) => `/api/inventory/olts/${oltCode}/splitters/${num}`,
   INVENTORY_CONFIG: "/api/inventory/config",

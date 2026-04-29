@@ -83,6 +83,14 @@ a:hover {
   @apply underline;
 }
 
+nav a {
+  color: inherit;
+}
+
+nav a:hover {
+  text-decoration: none;
+}
+
 /* ---------------------------------
    Form Elements (Base Only)
 ---------------------------------- */

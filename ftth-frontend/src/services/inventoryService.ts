@@ -7,6 +7,7 @@ import type {
   AddOltRequest,
   AddOltResponse,
   ApiMessage,
+  PortDetail,
 } from "../types/models";
 
 export const inventoryService = {
@@ -18,6 +19,9 @@ export const inventoryService = {
 
   getOltDetails: (oltCode: string) =>
     api.get<OltDetail>(ENDPOINTS.INVENTORY_OLT_DETAILS(oltCode)),
+
+  getOltPorts: (oltCode: string) =>
+    api.get<PortDetail[]>(ENDPOINTS.INVENTORY_OLT_PORTS(oltCode)),
 
   getConfig: () =>
     api.get<InventoryConfig>(ENDPOINTS.INVENTORY_CONFIG),
