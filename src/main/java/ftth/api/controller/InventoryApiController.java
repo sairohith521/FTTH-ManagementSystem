@@ -46,8 +46,14 @@ public class InventoryApiController {
         }
 
         Olt olt = details.getOlt();
-        int totalPorts = details.getSplitters().size() * service.getPortsPerSplitter();
-        int availablePorts = service.getAvailablePortsByType(olt.getServiceAreaId(), olt.getOltType());
+
+        // Count ports only for THIS specific OLT (sum from its splitters)
+        int totalPorts = 0;
+        int availablePorts = 0;
+        for (var s : details.getSplitters()) {
+            totalPorts += s.getTotalPorts();
+            availablePorts += s.getAvailablePorts();
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("oltCode", olt.getOltCode());
