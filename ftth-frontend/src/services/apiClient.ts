@@ -8,7 +8,8 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(error.message || `Request failed: ${res.status}`);
+    const msg = error.message || error.error || `Request failed: ${res.status}`;
+    throw new Error(`[${res.status}] ${msg}`);
   }
 
   return res.json();
