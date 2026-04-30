@@ -167,4 +167,21 @@ public class ConnectionApiController {
             return ResponseEntity.badRequest().body(result);
         }
     }
+
+    // ── Disconnect ───────────────────────────────────────────────
+    @PostMapping("/{connectionId}/disconnect")
+    public ResponseEntity<Map<String, String>> disconnect(
+            @PathVariable Long connectionId,
+            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
+
+        Map<String, String> result = new HashMap<>();
+        try {
+            customerConnectionService.disconnect(connectionId, userId);
+            result.put("message", "Connection disconnected successfully.");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            result.put("message", e.getMessage() != null ? e.getMessage() : "Failed to disconnect.");
+            return ResponseEntity.badRequest().body(result);
+        }
+    }
 }

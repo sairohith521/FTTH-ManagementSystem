@@ -23,6 +23,7 @@ export const ENDPOINTS = {
   CONNECTION_ACTIVE: "/api/connections/active",
   CONNECTION_AVAILABLE_PLANS: (id: number) => `/api/connections/${id}/available-plans`,
   CONNECTION_CHANGE_PLAN: (id: number) => `/api/connections/${id}/change-plan`,
+  CONNECTION_DISCONNECT: (id: number) => `/api/connections/${id}/disconnect`,
 
   // Customers
   CUSTOMERS: "/api/customers",
