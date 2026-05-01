@@ -1,8 +1,222 @@
-export default function Plans() {
+import { useEffect, useState } from "react";
+import PageWrapper from "../../components/layout/PageWrapper";
+import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
+import Table from "../../components/ui/Table";
+import Badge from "../../components/ui/Badge";
+import Loader from "../../components/ui/Loader";
+import Modal from "../../components/ui/Modal";
+import Input from "../../components/ui/Input";
+import Select from "../../components/ui/Select";
+import { api } from "../../services/apiClient";
+
+interface Plan {
+  planId: number;
+  planName: string;
+  speedLabel: string;
+  dataLimitLabel: string;
+  ottCount: number;
+  monthlyPrice: number;
+  oltType: string;
+  active: boolean;
+  customerCount: number;
+}
+
+const OLT_OPTIONS = [
+  { value: "OLT300", label: "OLT300" },
+  { value: "OLT500", label: "OLT500" },
+];
+
+export default function PlanAdmin() {
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [showForm, setShowForm] = useState(false);
+  const [editPlan, setEditPlan] = useState<Plan | null>(null);
+
+  const [form, setForm] = useState<any>({
+    planName: "",
+    speedLabel: "",
+    dataLimitLabel: "",
+    ottCount: 0,
+    monthlyPrice: "",
+    oltType: "",
+  });
+
+  const loadPlans = async () => {
+    setLoading(true);
+    const data = await api.get<Plan[]>("/api/admin/plans");
+    setPlans(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadPlans();
+  }, []);
+
+  const openAdd = () => {
+    setEditPlan(null);
+    setForm({
+      planName: "",
+      speedLabel: "",
+      dataLimitLabel: "",
+      ottCount: 0,
+      monthlyPrice: "",
+      oltType: "",
+    });
+    setShowForm(true);
+  };
+
+  const openEdit = (p: Plan) => {
+    setEditPlan(p);
+    setForm({ ...p });
+    setShowForm(true);
+  };
+
+  const savePlan = async () => {
+    if (editPlan) {
+      await api.put(`/api/admin/plans/${editPlan.planId}`, form);
+    } else {
+      await api.post("/api/admin/plans", form);
+    }
+    setShowForm(false);
+    loadPlans();
+  };
+
+  const togglePlan = async (id: number) => {
+    await api.patch(`/api/admin/plans/${id}/toggle`, {});
+    loadPlans();
+  };
+
+  const deletePlan = async (p: Plan) => {
+    if (p.customerCount > 0) return;
+    await api.del(`/api/admin/plans/${p.planId}`);
+    loadPlans();
+  };
+
+  if (loading) return <Loader />;
+
   return (
-    <div>
-      <h2>Plan Admin</h2>
-      <p>This is the Plan Administration page.</p>
-    </div>
+    <PageWrapper title="Plan Admin">
+      <Button onClick={openAdd}>+ Add New Plan</Button>
+
+      <Card>
+        <Table
+          keyField="planId"
+          data={plans}
+          columns={[
+            { key: "planId", header: "Key" },
+            { key: "planName", header: "Name" },
+            { key: "speedLabel", header: "Speed" },
+            { key: "dataLimitLabel", header: "Data" },
+            { key: "ottCount", header: "OTTs" },
+            {
+              key: "monthlyPrice",
+              header: "Price",
+              render: (r) => `₹${r.monthlyPrice}/mo`,
+            },
+            { key: "oltType", header: "OLT Type" },
+            { key: "customerCount", header: "Active Customers" },
+            {
+              key: "active",
+              header: "Status",
+              render: (r) =>
+                r.active ? (
+                  <Badge label="Active" variant="success" />
+                ) : (
+                  <Badge label="Disabled" variant="error" />
+                ),
+            },
+            {
+              key: "actions",
+              header: "Actions",
+              render: (r) => (
+                <div className="flex gap-2 text-sm">
+                  <button className="text-primary" onClick={() => openEdit(r)}>
+                    Edit
+                  </button>
+                  <button
+                    className="text-warning"
+                    onClick={() => togglePlan(r.planId)}
+                  >
+                    {r.active ? "Disable" : "Enable"}
+                  </button>
+                  <button
+                    className={`${
+                      r.customerCount > 0
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-error"
+                    }`}
+                    onClick={() => deletePlan(r)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              ),
+            },
+          ]}
+        />
+      </Card>
+
+      <Modal
+        open={showForm}
+        title={editPlan ? "Edit Plan" : "Add New Plan"}
+        onConfirm={savePlan}
+        onCancel={() => setShowForm(false)}
+      >
+        <div className="space-y-3">
+          <Input
+            label="Plan Name"
+            value={form.planName}
+            onChange={(e) =>
+              setForm({ ...form, planName: e.target.value })
+            }
+          />
+          <Input
+            label="Speed"
+            value={form.speedLabel}
+            onChange={(e) =>
+              setForm({ ...form, speedLabel: e.target.value })
+            }
+          />
+          <Input
+            label="Data Limit"
+            value={form.dataLimitLabel}
+            onChange={(e) =>
+              setForm({ ...form, dataLimitLabel: e.target.value })
+            }
+          />
+          <Input
+            label="OTT Count"
+            type="number"
+            value={form.ottCount}
+            onChange={(e) =>
+              setForm({ ...form, ottCount: Number(e.target.value) })
+            }
+          />
+          <Input
+            label="Monthly Price"
+            type="number"
+            value={form.monthlyPrice}
+            onChange={(e) =>
+              setForm({ ...form, monthlyPrice: e.target.value })
+            }
+          />
+
+          {editPlan ? (
+            <Input label="OLT Type" value={form.oltType} disabled />
+          ) : (
+            <Select
+              label="OLT Type"
+              value={form.oltType}
+              options={OLT_OPTIONS}
+              onChange={(e) =>
+                setForm({ ...form, oltType: e.target.value })
+              }
+            />
+          )}
+        </div>
+      </Modal>
+    </PageWrapper>
   );
 }
