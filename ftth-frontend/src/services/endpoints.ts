@@ -35,6 +35,12 @@ export const ENDPOINTS = {
 
   // Capacity
   CAPACITY: "/api/capacity",
+  CAPACITY_SUMMARY: "/api/dashboard/capacity-summary",
+
+  // Dashboard
+  DASHBOARD_ADMIN: "/api/dashboard/admin",
+  DASHBOARD_CSR: "/api/dashboard/csr",
+  DASHBOARD_MAINT: "/api/dashboard/maint",
 
   // Users
   USERS: "/api/users",

@@ -18,7 +18,7 @@ export default function Sidebar({ collapsed, onToggle }: Props) {
       }`}
     >
       <div className={`mb-6 flex items-center ${collapsed ? "justify-center" : "px-5 justify-between"}`}>
-        {!collapsed && <span className="text-white font-semibold text-[15px]">FTTH Admin</span>}
+        {!collapsed && <span className="text-white font-semibold text-[15px]">Aaha FTTH Portal</span>}
         <button
           onClick={onToggle}
           className="text-sidebarText hover:text-white text-lg cursor-pointer bg-transparent border-none"
