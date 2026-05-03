@@ -31,7 +31,7 @@ interface ActiveConnection {
   serviceAreaId: number;
 }
 
-type View = "menu" | "new-install" | "change";
+type View = "menu" | "new-install" | "change" | "move";
 
 const cardStyle: React.CSSProperties = {
   background: "#ffffff",
@@ -75,6 +75,16 @@ export default function Connections() {
   const [cpError, setCpError] = useState("");
   const [cpSuccess, setCpSuccess] = useState("");
 
+  // ── Move state ──
+  const [moveConn, setMoveConn] = useState<ActiveConnection | null>(null);
+  const [movePincode, setMovePincode] = useState("");
+  const [moveSearch, setMoveSearch] = useState("");
+  const [moveCheck, setMoveCheck] = useState<{ available: boolean; oltType: string; availablePorts: number; message: string } | null>(null);
+  const [moveCheckLoading, setMoveCheckLoading] = useState(false);
+  const [moveLoading, setMoveLoading] = useState(false);
+  const [moveError, setMoveError] = useState("");
+  const [moveSuccess, setMoveSuccess] = useState("");
+
   // ── Load data on view change ──
   useEffect(() => {
     if (view === "new-install") {
@@ -99,6 +109,21 @@ export default function Connections() {
         .then(setActiveConns)
         .catch((err) => setConnsError(err instanceof Error ? err.message : "Failed to load connections."))
         .finally(() => setConnsLoading(false));
+    }
+    if (view === "move") {
+      setConnsLoading(true);
+      setConnsError("");
+      setMoveConn(null);
+      setMovePincode("");
+      setMoveCheck(null);
+      setMoveError("");
+      setMoveSuccess("");
+      api.get<ActiveConnection[]>(ENDPOINTS.CONNECTION_ACTIVE)
+        .then(setActiveConns)
+        .catch((err) => setConnsError(err instanceof Error ? err.message : "Failed to load connections."))
+        .finally(() => setConnsLoading(false));
+      // Also load pincodes for datalist
+      api.get<string[]>(ENDPOINTS.INVENTORY_PINCODES).then(setPincodes).catch(() => {});
     }
   }, [view]);
 
@@ -169,6 +194,43 @@ export default function Connections() {
     }
   };
 
+  const handleCheckMove = async () => {
+    if (!moveConn || !movePincode.trim()) return;
+    setMoveCheck(null);
+    setMoveError("");
+    setMoveCheckLoading(true);
+    try {
+      const res = await api.get<{ available: boolean; oltType: string; availablePorts: number; message: string }>(
+        ENDPOINTS.CONNECTION_CHECK_MOVE(moveConn.connectionId, movePincode.trim())
+      );
+      setMoveCheck(res);
+    } catch (err: unknown) {
+      setMoveError(err instanceof Error ? err.message : "Failed to check move.");
+    } finally {
+      setMoveCheckLoading(false);
+    }
+  };
+
+  const handleMove = async () => {
+    if (!moveConn || !moveCheck?.available) return;
+    setMoveLoading(true);
+    setMoveError("");
+    setMoveSuccess("");
+    try {
+      await api.post(ENDPOINTS.CONNECTION_MOVE(moveConn.connectionId), { newPincode: Number(movePincode.trim()) });
+      setMoveSuccess("Customer moved successfully.");
+      const updated = await api.get<ActiveConnection[]>(ENDPOINTS.CONNECTION_ACTIVE);
+      setActiveConns(updated);
+      setMoveConn(null);
+      setMovePincode("");
+      setMoveCheck(null);
+    } catch (err: unknown) {
+      setMoveError(err instanceof Error ? err.message : "Failed to move connection.");
+    } finally {
+      setMoveLoading(false);
+    }
+  };
+
   const selectedNewPlan = availPlans.find((p) => p.planId === selectedNewPlanId) ?? null;
 
   const goBack = () => {
@@ -177,6 +239,11 @@ export default function Connections() {
     setCpError("");
     setCpSuccess("");
     setSelectedConn(null);
+    setMoveConn(null);
+    setMovePincode("");
+    setMoveCheck(null);
+    setMoveError("");
+    setMoveSuccess("");
   };
 
   return (
@@ -187,7 +254,7 @@ export default function Connections() {
       <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
         {[
           { key: "new-install", label: "New Install",  desc: "Add a new customer connection",    active: true },
-          { key: "move",        label: "Move",         desc: "Move customer to new pincode",      active: false },
+          { key: "move",        label: "Move",         desc: "Move customer to new pincode",      active: true },
           { key: "change",      label: "Change Plan",  desc: "Update customer service plan",      active: true },
           { key: "disconnect",  label: "Disconnect",   desc: "Terminate customer connection",     active: false },
         ].map((opt) => (
@@ -408,6 +475,151 @@ export default function Connections() {
                   style={{ ...primaryBtn, opacity: !selectedNewPlanId ? 0.5 : 1 }}
                 >
                   {cpLoading ? "Changing..." : "Confirm Change"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── MOVE ── */}
+      {view === "move" && (
+        <div style={{ marginTop: "32px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+            <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#111827", margin: 0 }}>Move Customer</h2>
+            <button onClick={goBack} style={cancelBtn}>← Back</button>
+          </div>
+
+          {/* Search */}
+          <div style={{ marginBottom: "12px", maxWidth: "500px" }}>
+            <input
+              value={moveSearch}
+              onChange={(e) => setMoveSearch(e.target.value)}
+              placeholder="Search by customer code, name, or pincode..."
+              style={{ ...inputStyle, width: "100%" }}
+              onFocus={focusBorder}
+              onBlur={blurBorder}
+            />
+          </div>
+
+          {/* Active Connections Table */}
+          <p style={sectionLabel}>ACTIVE CONNECTIONS — click a row to select</p>
+          <div style={{ background: "#ffffff", border: "1px solid #d1d5db", borderRadius: "4px", overflow: "hidden", marginBottom: "24px" }}>
+            {connsLoading ? (
+              <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>Loading connections...</p>
+            ) : connsError ? (
+              <p style={{ padding: "16px", fontSize: "13px", color: "#dc2626" }}>{connsError}</p>
+            ) : activeConns.length === 0 ? (
+              <p style={{ padding: "16px", fontSize: "13px", color: "#6b7280" }}>No active connections found.</p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "#f1f5f9" }}>
+                    {["Conn ID", "Cust Code", "Customer", "Pincode", "Plan", "Price", "OLT", "Port"].map((h) => (
+                      <th key={h} style={thStyle}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeConns
+                    .filter((c) => {
+                      if (!moveSearch.trim()) return true;
+                      const q = moveSearch.toLowerCase();
+                      return c.customerCode.toLowerCase().includes(q)
+                        || c.fullName.toLowerCase().includes(q)
+                        || c.pincode.includes(q);
+                    })
+                    .map((c, i) => {
+                    const sel = moveConn?.connectionId === c.connectionId;
+                    return (
+                      <tr key={c.connectionId} onClick={() => { setMoveConn(c); setMovePincode(""); setMoveCheck(null); setMoveError(""); setMoveSuccess(""); }}
+                        style={{ background: sel ? "#e0f2fe" : i % 2 === 1 ? "#fafafa" : "#ffffff", borderTop: "1px solid #e5e7eb", cursor: "pointer" }}>
+                        <td style={tdStyle}>{c.connectionId}</td>
+                        <td style={tdStyle}>{c.customerCode}</td>
+                        <td style={{ ...tdStyle, fontWeight: sel ? 600 : 400 }}>{c.fullName}</td>
+                        <td style={tdStyle}>{c.pincode}</td>
+                        <td style={tdStyle}>{c.planName}</td>
+                        <td style={{ ...tdStyle, color: "#256D85", fontWeight: 500 }}>Rs. {c.monthlyPrice}</td>
+                        <td style={tdStyle}>{c.oltType}</td>
+                        <td style={{ ...tdStyle, fontSize: "12px", color: "#6b7280" }}>{c.oltCode}/Spl{c.splitterNumber}/Port{c.portNumber}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Move form */}
+          {moveConn && (
+            <>
+              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "4px", padding: "12px 16px", marginBottom: "16px" }}>
+                <p style={{ fontSize: "13px", color: "#166534", margin: 0 }}>
+                  Selected: <strong>{moveConn.fullName}</strong> ({moveConn.customerCode}) — Current pincode: <strong>{moveConn.pincode}</strong> — OLT: <strong>{moveConn.oltType}</strong>
+                </p>
+              </div>
+
+              <div style={{ background: "#ffffff", border: "1px solid #d1d5db", borderRadius: "4px", padding: "24px", maxWidth: "480px", marginBottom: "16px" }}>
+                <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
+                  <Field label="New Pincode">
+                    <input
+                      value={movePincode}
+                      onChange={(e) => { setMovePincode(e.target.value); setMoveCheck(null); }}
+                      placeholder="Type or pick..."
+                      list="move-pincode-list"
+                      style={inputStyle}
+                      onFocus={focusBorder}
+                      onBlur={blurBorder}
+                    />
+                    <datalist id="move-pincode-list">
+                      {pincodes.filter((p) => p !== moveConn.pincode).map((p) => (
+                        <option key={p} value={p} />
+                      ))}
+                    </datalist>
+                  </Field>
+                  <button
+                    onClick={handleCheckMove}
+                    disabled={!movePincode.trim() || moveCheckLoading}
+                    style={{ ...primaryBtn, opacity: !movePincode.trim() ? 0.5 : 1 }}
+                  >
+                    {moveCheckLoading ? "Checking..." : "Check Availability"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Check result */}
+              {moveCheck && (
+                <div style={{
+                  background: moveCheck.available ? "#eff6ff" : "#fef2f2",
+                  border: `1px solid ${moveCheck.available ? "#bfdbfe" : "#fecaca"}`,
+                  borderRadius: "4px",
+                  padding: "12px 16px",
+                  marginBottom: "16px",
+                }}>
+                  <p style={{ fontSize: "13px", color: moveCheck.available ? "#1e40af" : "#991b1b", margin: 0 }}>
+                    {moveCheck.message}
+                    {moveCheck.available && (
+                      <span style={{ marginLeft: "8px" }}>
+                        (Move from <strong>{moveConn.pincode}</strong> → <strong>{movePincode}</strong>)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
+
+              {moveError   && <p style={{ ...errText, marginBottom: "12px" }}>{moveError}</p>}
+              {moveSuccess && <p style={{ fontSize: "13px", color: "#16a34a", marginBottom: "12px" }}>{moveSuccess}</p>}
+
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button onClick={() => { setMoveConn(null); setMovePincode(""); setMoveCheck(null); setMoveError(""); setMoveSuccess(""); }} style={cancelBtn}>
+                  Cancel
+                </button>
+                <button
+                  onClick={handleMove}
+                  disabled={!moveCheck?.available || moveLoading}
+                  style={{ ...primaryBtn, opacity: !moveCheck?.available ? 0.5 : 1 }}
+                >
+                  {moveLoading ? "Moving..." : "Confirm Move"}
                 </button>
               </div>
             </>
