@@ -112,7 +112,7 @@ private void doInventory(Scanner sc) {
 
     System.out.println("\n--- Capacity Dashboard ---");
     capacityService.showCapacityDashboard();
-    System.out.print("\nPress Enter to continue...");
+    System.out.print("\nPress Enter to continue...");//j
     sc.nextLine();
 }
 

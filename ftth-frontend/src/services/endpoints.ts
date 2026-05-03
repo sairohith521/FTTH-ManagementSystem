@@ -23,11 +23,18 @@ export const ENDPOINTS = {
   CONNECTION_ACTIVE: "/api/connections/active",
   CONNECTION_AVAILABLE_PLANS: (id: number) => `/api/connections/${id}/available-plans`,
   CONNECTION_CHANGE_PLAN: (id: number) => `/api/connections/${id}/change-plan`,
+  CONNECTION_CHECK_MOVE: (id: number, pincode: string) => `/api/connections/${id}/check-move?pincode=${pincode}`,
+  CONNECTION_MOVE: (id: number) => `/api/connections/${id}/move`,
   CONNECTION_DISCONNECT: (id: number) => `/api/connections/${id}/disconnect`,
 
   // Customers
   CUSTOMERS: "/api/customers",
   CUSTOMER_BY_CODE: (code: string) => `/api/customers/${code}`,
+  CUSTOMER_CONNECTION: (code: string) => `/api/customers/${code}/connection`,
+  CUSTOMER_BILLS: (code: string) => `/api/customers/${code}/bills`,
+  CUSTOMER_GENERATE_BILL: (code: string) => `/api/customers/${code}/bills/generate`,
+  BILL_PAY: (id: number) => `/api/customers/bills/${id}/pay`,
+  BILL_OVERDUE: (id: number) => `/api/customers/bills/${id}/overdue`,
 
   // Bills
   BILLS: "/api/bills",
