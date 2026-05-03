@@ -21,8 +21,8 @@ public class EmailService {
     }
     private static final Dotenv dotenv = Dotenv.load();
 
-    private static final String API_TOKEN = dotenv.get(MAILTRAP_API_TOKEN);
-    private static final String INBOX_ID = dotenv.get(MAILTRAP_INBOX_ID);
+    private static final String API_TOKEN = dotenv.get("MAILTRAP_API_TOKEN");
+    private static final String INBOX_ID = dotenv.get("MAILTRAP_INBOX_ID");
 
     public void sendBillEmail(String name, String custID, String billNo,
                               String service, int planCharge, int gst, int total,
