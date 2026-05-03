@@ -25,6 +25,7 @@ export const ENDPOINTS = {
   CONNECTION_CHANGE_PLAN: (id: number) => `/api/connections/${id}/change-plan`,
   CONNECTION_CHECK_MOVE: (id: number, pincode: string) => `/api/connections/${id}/check-move?pincode=${pincode}`,
   CONNECTION_MOVE: (id: number) => `/api/connections/${id}/move`,
+  CONNECTION_DISCONNECT: (id: number) => `/api/connections/${id}/disconnect`,
 
   // Customers
   CUSTOMERS: "/api/customers",
