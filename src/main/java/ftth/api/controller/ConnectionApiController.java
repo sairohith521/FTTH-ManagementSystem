@@ -106,10 +106,10 @@ public class ConnectionApiController {
         return ResponseEntity.ok(rows);
     }
 
-    // ── Available Plans for a Connection (excluding current, filtered by ports) ──
+    // ── Available Plans for a Connection ─────────────────────────
     @GetMapping("/{connectionId}/available-plans")
     public ResponseEntity<List<Map<String, Object>>> getAvailablePlans(
-            @PathVariable Long connectionId) {
+            @PathVariable(value = "connectionId") Long connectionId) {
 
         try {
             CustomerConnection conn = connectionRepo.findById(connectionId);
@@ -152,7 +152,7 @@ public class ConnectionApiController {
     // ── Change Plan ──────────────────────────────────────────────
     @PostMapping("/{connectionId}/change-plan")
     public ResponseEntity<Map<String, String>> changePlan(
-            @PathVariable Long connectionId,
+            @PathVariable(value = "connectionId") Long connectionId,
             @RequestBody Map<String, Object> body,
             @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
 
@@ -168,10 +168,85 @@ public class ConnectionApiController {
         }
     }
 
+    // ── Check Move Availability ──────────────────────────────────
+    @GetMapping("/{connectionId}/check-move")
+    public ResponseEntity<Map<String, Object>> checkMove(
+            @PathVariable(value = "connectionId") Long connectionId,
+            @RequestParam(value = "pincode") String pincode) {
+
+        Map<String, Object> result = new HashMap<>();
+        try {
+            CustomerConnection conn = connectionRepo.findById(connectionId);
+            if (conn == null || !conn.isActive()) {
+                result.put("available", false);
+                result.put("message", "Connection not found or inactive.");
+                return ResponseEntity.ok(result);
+            }
+
+            Plan plan = planService.findPlanById(conn.getPlanId());
+            String oltType = plan.getOltType();
+
+            ftth.model.ServiceArea newArea = new ftth.service.ServiceAreaService(
+                new ftth.repository.ServiceAreaRepository()
+            ).findByPincode(Long.parseLong(pincode));
+
+            if (newArea == null || !newArea.isActive()) {
+                result.put("available", false);
+                result.put("oltType", oltType);
+                result.put("availablePorts", 0);
+                result.put("message", "Service not available in pincode " + pincode + ".");
+                return ResponseEntity.ok(result);
+            }
+
+            int ports = inventoryService.getAvailablePortsByType(newArea.getServiceAreaId(), oltType);
+            result.put("oltType", oltType);
+            result.put("availablePorts", ports);
+            result.put("available", ports > 0);
+            result.put("message", ports > 0
+                ? ports + " " + oltType + " port(s) available in pincode " + pincode + "."
+                : "No " + oltType + " ports available in pincode " + pincode + ".");
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            result.put("available", false);
+            result.put("message", e.getMessage() != null ? e.getMessage() : "Error checking move.");
+            return ResponseEntity.badRequest().body(result);
+        }
+    }
+
+    // ── Move Connection ──────────────────────────────────────────
+    @PostMapping("/{connectionId}/move")
+    public ResponseEntity<Map<String, String>> moveConnection(
+            @PathVariable(value = "connectionId") Long connectionId,
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
+
+        Map<String, String> result = new HashMap<>();
+        try {
+            long newPincode = Long.parseLong(body.get("newPincode").toString());
+
+            CustomerConnection conn = connectionRepo.findById(connectionId);
+            if (conn == null || !conn.isActive()) {
+                result.put("message", "Connection not found or inactive.");
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            Plan plan = planService.findPlanById(conn.getPlanId());
+            String oltType = plan.getOltType();
+
+            customerConnectionService.updateCustomerConnection(conn, newPincode, oltType, userId);
+            result.put("message", "Customer moved successfully.");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            result.put("message", e.getMessage() != null ? e.getMessage() : "Failed to move connection.");
+            return ResponseEntity.badRequest().body(result);
+        }
+    }
+
     // ── Disconnect ───────────────────────────────────────────────
     @PostMapping("/{connectionId}/disconnect")
     public ResponseEntity<Map<String, String>> disconnect(
-            @PathVariable Long connectionId,
+            @PathVariable(value = "connectionId") Long connectionId,
             @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
 
         Map<String, String> result = new HashMap<>();
