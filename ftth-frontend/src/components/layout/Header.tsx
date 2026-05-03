@@ -13,7 +13,7 @@ export default function Header() {
           <>
             <span className="text-sm text-textSecondary">{user}</span>
             <Badge label={role} variant="neutral" />
-            <Button variant="outline" onClick={logout} className="text-xs px-3 py-1">
+            <Button variant="danger" onClick={logout} className="text-xs px-3 py-1">
               Logout
             </Button>
           </>

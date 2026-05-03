@@ -31,8 +31,7 @@ interface ActiveConnection {
   serviceAreaId: number;
 }
 
-type View = "menu" | "new-install" | "change" | "move";
-type View = "menu" | "new-install" | "change" | "disconnect";
+type View = "menu" | "new-install" | "change" | "move" | "disconnect";
 
 const cardStyle: React.CSSProperties = {
   background: "#ffffff",
@@ -139,6 +138,7 @@ export default function Connections() {
         .finally(() => setConnsLoading(false));
       // Also load pincodes for datalist
       api.get<string[]>(ENDPOINTS.INVENTORY_PINCODES).then(setPincodes).catch(() => {});
+    }
 
     if (view === "disconnect") {
       setDcConnsLoading(true);
@@ -755,6 +755,10 @@ export default function Connections() {
                 </button>
               </div>
             </>
+          )}
+        </div>
+      )}
+
       {/* ── DISCONNECT ── */}
       {view === "disconnect" && (
         <div style={{ marginTop: "32px" }}>

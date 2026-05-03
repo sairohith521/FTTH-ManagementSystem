@@ -106,7 +106,7 @@ public class ConnectionApiController {
         return ResponseEntity.ok(rows);
     }
 
-    // ── Available Plans for a Connection (excluding current, filtered by ports) ──
+    // ── Available Plans for a Connection ─────────────────────────
     @GetMapping("/{connectionId}/available-plans")
     public ResponseEntity<List<Map<String, Object>>> getAvailablePlans(
             @PathVariable(value = "connectionId") Long connectionId) {
@@ -219,10 +219,6 @@ public class ConnectionApiController {
     public ResponseEntity<Map<String, String>> moveConnection(
             @PathVariable(value = "connectionId") Long connectionId,
             @RequestBody Map<String, Object> body,
-    // ── Disconnect ───────────────────────────────────────────────
-    @PostMapping("/{connectionId}/disconnect")
-    public ResponseEntity<Map<String, String>> disconnect(
-            @PathVariable Long connectionId,
             @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
 
         Map<String, String> result = new HashMap<>();
@@ -243,6 +239,18 @@ public class ConnectionApiController {
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             result.put("message", e.getMessage() != null ? e.getMessage() : "Failed to move connection.");
+            return ResponseEntity.badRequest().body(result);
+        }
+    }
+
+    // ── Disconnect ───────────────────────────────────────────────
+    @PostMapping("/{connectionId}/disconnect")
+    public ResponseEntity<Map<String, String>> disconnect(
+            @PathVariable(value = "connectionId") Long connectionId,
+            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
+
+        Map<String, String> result = new HashMap<>();
+        try {
             customerConnectionService.disconnect(connectionId, userId);
             result.put("message", "Connection disconnected successfully.");
             return ResponseEntity.ok(result);

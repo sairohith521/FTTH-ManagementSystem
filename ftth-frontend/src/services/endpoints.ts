@@ -30,6 +30,11 @@ export const ENDPOINTS = {
   // Customers
   CUSTOMERS: "/api/customers",
   CUSTOMER_BY_CODE: (code: string) => `/api/customers/${code}`,
+  CUSTOMER_CONNECTION: (code: string) => `/api/customers/${code}/connection`,
+  CUSTOMER_BILLS: (code: string) => `/api/customers/${code}/bills`,
+  CUSTOMER_GENERATE_BILL: (code: string) => `/api/customers/${code}/bills/generate`,
+  BILL_PAY: (id: number) => `/api/customers/bills/${id}/pay`,
+  BILL_OVERDUE: (id: number) => `/api/customers/bills/${id}/overdue`,
 
   // Bills
   BILLS: "/api/bills",
