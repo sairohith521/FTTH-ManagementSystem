@@ -1,0 +1,18 @@
+# ── Test files (created during testing session) ─────────
+test/
+ftth-Backend/src/test/java/ftth/api/
+ftth-Backend/src/test/java/ftth/model/
+ftth-Backend/src/test/java/ftth/service/
+
+# ── Generated/created during setup ──────────────────────
+ftth-Backend/.mvn/
+ftth-Backend/mvnw.cmd
+ftth-Backend/.env
+.env
+
+# ── Build output ────────────────────────────────────────
+target/
+ftth-Backend/target/
+
+# ── Duplicate root src (not part of project) ────────────
+src/
