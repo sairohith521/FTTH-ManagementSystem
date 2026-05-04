@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 
 @SpringBootApplication(
-    scanBasePackages = "ftth.api",
+    scanBasePackages = "ftth",
     exclude = DataSourceAutoConfiguration.class
 )
 public class ApiApplication {
