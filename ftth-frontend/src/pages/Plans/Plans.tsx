@@ -30,7 +30,6 @@ const OLT_OPTIONS = [
 export default function PlanAdmin() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [editPlan, setEditPlan] = useState<Plan | null>(null);
@@ -95,29 +94,16 @@ export default function PlanAdmin() {
     loadPlans();
   };
 
-  const filtered = plans.filter(
-    (p) =>
-      p.planName.toLowerCase().includes(search.toLowerCase()) ||
-      p.oltType.toLowerCase().includes(search.toLowerCase())
-  );
-
   if (loading) return <Loader />;
 
   return (
     <PageWrapper title="Plan Admin">
-      <div className="flex gap-3 mb-2">
-        <Button onClick={openAdd}>+ Add New Plan</Button>
-        <Input
-          placeholder="Search by name or OLT type..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+      <Button onClick={openAdd} style={{ padding: "6px 14px", fontSize: "13px", alignSelf: "flex-start" }}>+ Add New Plan</Button>
 
       <Card>
         <Table
           keyField="planId"
-          data={filtered}
+          data={plans}
           columns={[
             { key: "planId", header: "Key" },
             { key: "planName", header: "Name" },
@@ -145,26 +131,10 @@ export default function PlanAdmin() {
               key: "actions",
               header: "Actions",
               render: (r) => (
-                <div className="flex gap-2 text-sm">
-                  <button className="text-primary" onClick={() => openEdit(r)}>
-                    Edit
-                  </button>
-                  <button
-                    className="text-warning"
-                    onClick={() => togglePlan(r.planId)}
-                  >
-                    {r.active ? "Disable" : "Enable"}
-                  </button>
-                  <button
-                    className={`${
-                      r.customerCount > 0
-                        ? "text-gray-400 cursor-not-allowed"
-                        : "text-error"
-                    }`}
-                    onClick={() => deletePlan(r)}
-                  >
-                    Delete
-                  </button>
+                <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                  <button style={{ fontSize: "13px", color: "#2563eb", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={() => openEdit(r)}>Edit</button>
+                  <button style={{ fontSize: "13px", color: "#f59e0b", background: "none", border: "none", cursor: "pointer", padding: 0 }} onClick={() => togglePlan(r.planId)}>{r.active ? "Disable" : "Enable"}</button>
+                  <button style={{ fontSize: "13px", color: r.customerCount > 0 ? "#9ca3af" : "#dc2626", background: "none", border: "none", cursor: r.customerCount > 0 ? "not-allowed" : "pointer", padding: 0 }} onClick={() => deletePlan(r)}>Delete</button>
                 </div>
               ),
             },

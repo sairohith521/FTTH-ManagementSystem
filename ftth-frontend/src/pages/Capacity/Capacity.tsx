@@ -57,33 +57,22 @@ export default function Capacity() {
   return (
     <PageWrapper title="Capacity Dashboard">
       {/* ---- Summary Cards ---- */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <div className="text-sm text-textSecondary">Threshold</div>
-          <div className="text-xl font-semibold">{data.threshold}%</div>
-        </Card>
-
-        <Card>
-          <div className="text-sm text-textSecondary">Total OLTs</div>
-          <div className="text-xl font-semibold">{data.totalOlts}</div>
-        </Card>
-
-        <Card>
-          <div className="text-sm text-textSecondary">Breaches</div>
-          <div className="text-xl font-semibold text-warning">
-            {data.breachCount}
+      <div style={{ display: "flex", gap: "16px" }}>
+        {[
+          { label: "Threshold", value: `${data.threshold}%` },
+          { label: "Total OLTs", value: data.totalOlts },
+          { label: "Breaches", value: data.breachCount, color: "#f59e0b" },
+        ].map((c) => (
+          <div key={c.label} style={{ background: "#ffffff", border: "1px solid #d1d5db", borderRadius: "4px", padding: "24px 20px", flex: 1 }}>
+            <div style={{ fontSize: "13px", color: "#6b7280" }}>{c.label}</div>
+            <div style={{ fontSize: "20px", fontWeight: 600, color: c.color ?? "inherit" }}>{c.value}</div>
           </div>
-        </Card>
-
-        <Card>
-          <div className="text-sm text-textSecondary">Expansion Needed</div>
-          <div className="text-sm">
-            Splitters: <b>{data.addSplitterCount}</b>
-          </div>
-          <div className="text-sm">
-            OLTs: <b>{data.addOltCount}</b>
-          </div>
-        </Card>
+        ))}
+        <div style={{ background: "#ffffff", border: "1px solid #d1d5db", borderRadius: "4px", padding: "24px 20px", flex: 1 }}>
+          <div style={{ fontSize: "13px", color: "#6b7280" }}>Expansion Needed</div>
+          <div style={{ fontSize: "13px", marginTop: "4px" }}>Splitters: <b>{data.addSplitterCount}</b></div>
+          <div style={{ fontSize: "13px" }}>OLTs: <b>{data.addOltCount}</b></div>
+        </div>
       </div>
 
       {/* ---- Capacity Table ---- */}

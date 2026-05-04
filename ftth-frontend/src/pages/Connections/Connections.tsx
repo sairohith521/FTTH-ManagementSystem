@@ -310,10 +310,9 @@ export default function Connections() {
 
   return (
     <div style={{ fontFamily: "'Source Sans 3', 'Segoe UI', sans-serif", padding: "24px" }}>
-      <h1 style={{ fontSize: "22px", fontWeight: 600, color: "#111827", margin: "0 0 24px 0" }}>Connections</h1>
 
       {/* 4 Option Cards */}
-      <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "16px" }}>
         {[
           { key: "new-install", label: "New Install",  desc: "Add a new customer connection",    active: true },
           { key: "move",        label: "Move",         desc: "Move customer to new pincode",      active: true },
@@ -325,6 +324,8 @@ export default function Connections() {
             onClick={() => opt.active && setView(opt.key as View)}
             style={{
               ...cardStyle,
+              flex: 1,
+              width: "auto",
               borderColor: view === opt.key ? "#256D85" : "#d1d5db",
               cursor: opt.active ? "pointer" : "not-allowed",
               opacity: opt.active ? 1 : 0.45,

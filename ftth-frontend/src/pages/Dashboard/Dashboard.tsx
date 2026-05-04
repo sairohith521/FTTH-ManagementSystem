@@ -102,7 +102,6 @@ const statLabel: React.CSSProperties = {
 const actionGrid: React.CSSProperties = {
   display: "flex",
   gap: "12px",
-  flexWrap: "wrap",
 };
 
 const actionBtn: React.CSSProperties = {
@@ -148,21 +147,9 @@ export default function Dashboard() {
   const { role, user } = useAuth();
   const navigate = useNavigate();
 
-  const titleMap: Record<Role, string> = {
-    ADMIN: "Administrator Dashboard",
-    CSR: "Customer Service Dashboard",
-    MAINT: "Maintenance Dashboard",
-  };
-
   return (
     <div style={container}>
-      <h1 style={{ fontSize: "22px", fontWeight: 600, color: "#111827", margin: "0 0 2px 0" }}>
-        {titleMap[role]}
-      </h1>
-      <p style={{ fontSize: "14px", color: "#6b7280", margin: "0 0 8px 0" }}>
-        Welcome back, {user}.
-      </p>
-
+      <p style={{ fontSize: "14px", color: "#6b7280", margin: "0 0 8px 0" }}>Welcome back, {user}.</p>
       {role === "ADMIN" && <AdminDashboard navigate={navigate} />}
       {role === "CSR" && <CsrDashboard navigate={navigate} />}
       {role === "MAINT" && <MaintDashboard navigate={navigate} />}
@@ -176,12 +163,16 @@ export default function Dashboard() {
 function AdminDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate> }) {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [alerts, setAlerts] = useState<CapacityAlert[]>([]);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
     api.get<AdminStats>(ENDPOINTS.DASHBOARD_ADMIN)
-      .then(setStats)
+      .then((data) => {
+        setStats(data);
+        if ((data as any).recentActivity) setRecentActivity((data as any).recentActivity);
+      })
       .catch(() => setStats({ totalCustomers: 0, activeConnections: 0, availablePorts: 0, totalRevenue: 0, newConnectionsThisWeek: 0, disconnectsThisWeek: 0 }));
 
     api.get<CapacityAlert[]>(ENDPOINTS.CAPACITY_SUMMARY)
@@ -196,25 +187,21 @@ function AdminDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate>
 
   return (
     <>
-      {/* Critical Alerts */}
       {criticalAlerts.length > 0 && (
         <>
           <p style={sectionTitle}>🔴 Critical Alerts</p>
-          {criticalAlerts.map((a) => (
-            <div key={a.oltCode} style={alertCard}>
-              <span style={{ fontWeight: 600, color: "#991b1b" }}>{a.oltCode}</span>
-              <span style={badge(a.usagePercent >= 95 ? "#dc2626" : "#f59e0b")}>
-                {a.usagePercent}% full
-              </span>
-              <span style={{ fontSize: "13px", color: "#6b7280", marginLeft: "12px" }}>
-                {a.usedPorts}/{a.totalPorts} ports used
-              </span>
-            </div>
-          ))}
+          <div style={{ maxHeight: "200px", overflowY: "auto", maxWidth: "600px" }}>
+            {criticalAlerts.map((a) => (
+              <div key={a.oltCode} style={alertCard}>
+                <span style={{ fontWeight: 600, color: "#991b1b" }}>{a.oltCode}</span>
+                <span style={badge(a.usagePercent >= 95 ? "#dc2626" : "#f59e0b")}>{a.usagePercent}% full</span>
+                <span style={{ fontSize: "13px", color: "#6b7280", marginLeft: "12px" }}>{a.usedPorts}/{a.totalPorts} ports used</span>
+              </div>
+            ))}
+          </div>
         </>
       )}
 
-      {/* Stats */}
       <p style={sectionTitle}>📊 System Overview</p>
       {stats && (
         <div style={statsGrid}>
@@ -225,26 +212,24 @@ function AdminDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate>
         </div>
       )}
 
-      {/* Capacity Insights */}
       {alerts.length > 0 && (
         <>
           <p style={sectionTitle}>🧠 Capacity Insights</p>
-          {alerts.slice(0, 5).map((a) => (
-            <div key={a.oltCode} style={insightCard}>
-              <span style={{ fontWeight: 500 }}>{a.oltCode}</span>
-              <span style={{ fontSize: "13px", color: "#6b7280", marginLeft: "12px" }}>
-                {a.usagePercent}% utilized — {a.totalPorts - a.usedPorts} ports remaining
-              </span>
-              <ProgressBar percent={a.usagePercent} />
-            </div>
-          ))}
-          <button style={{ ...actionBtn, background: "#4b5563", marginTop: "8px" }} onClick={() => navigate("/capacity")}>
-            View Full Capacity →
-          </button>
+          <div style={{ maxWidth: "600px" }}>
+            {alerts.slice(0, 5).map((a) => (
+              <div key={a.oltCode} style={insightCard}>
+                <span style={{ fontWeight: 500 }}>{a.oltCode}</span>
+                <span style={{ fontSize: "13px", color: "#6b7280", marginLeft: "12px" }}>
+                  {a.usagePercent}% utilized — {a.totalPorts - a.usedPorts} ports remaining
+                </span>
+                <ProgressBar percent={a.usagePercent} />
+              </div>
+            ))}
+            <button style={{ ...actionBtn, background: "#4b5563", marginTop: "8px" }} onClick={() => navigate("/capacity")}>View Full Capacity →</button>
+          </div>
         </>
       )}
 
-      {/* Trends */}
       {stats && (
         <>
           <p style={sectionTitle}>📈 This Week</p>
@@ -255,14 +240,26 @@ function AdminDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate>
         </>
       )}
 
-      {/* Quick Actions */}
+      {recentActivity.length > 0 && (
+        <>
+          <p style={sectionTitle}>📋 Recent Activity</p>
+          {recentActivity.slice(0, 5).map((a) => (
+            <div key={a.id} style={insightCard}>
+              <span style={{ fontWeight: 500, fontSize: "13px" }}>{a.type}</span>
+              <span style={{ fontSize: "13px", color: "#6b7280", marginLeft: "8px" }}>{a.description}</span>
+              <span style={{ fontSize: "11px", color: "#9ca3af", float: "right" }}>{a.timestamp}</span>
+            </div>
+          ))}
+        </>
+      )}
+
       <p style={sectionTitle}>⚙️ Quick Actions</p>
       <div style={actionGrid}>
-        <button style={actionBtn} onClick={() => navigate("/plans")}>Add Plan</button>
-        <button style={actionBtn} onClick={() => navigate("/users")}>Add User</button>
-        <button style={actionBtn} onClick={() => navigate("/inventory")}>Manage Inventory</button>
-        <button style={actionBtn} onClick={() => navigate("/connections")}>New Connection</button>
-        <button style={{ ...actionBtn, background: "#7c3aed" }} onClick={() => navigate("/maintenance")}>Maintenance</button>
+        <button style={{ ...actionBtn, flex: 1 }} onClick={() => navigate("/plans")}>Add Plan</button>
+        <button style={{ ...actionBtn, flex: 1 }} onClick={() => navigate("/users")}>Add User</button>
+        <button style={{ ...actionBtn, flex: 1 }} onClick={() => navigate("/inventory")}>Manage Inventory</button>
+        <button style={{ ...actionBtn, flex: 1 }} onClick={() => navigate("/connections")}>New Connection</button>
+        <button style={{ ...actionBtn, flex: 1, background: "#7c3aed" }} onClick={() => navigate("/maintenance")}>Maintenance</button>
       </div>
     </>
   );
@@ -274,7 +271,6 @@ function AdminDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate>
 function CsrDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate> }) {
   const [stats, setStats] = useState<CsrStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-  const [topPlans, setTopPlans] = useState<PlanInsight[]>([]);
   const [searchCode, setSearchCode] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -284,7 +280,6 @@ function CsrDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate> }
       .then((data) => {
         setStats(data);
         if ((data as any).recentActivity) setRecentActivity((data as any).recentActivity);
-        if ((data as any).topPlans) setTopPlans((data as any).topPlans);
       })
       .catch(() => setStats({ totalCustomers: 0, newCustomersToday: 0, pendingRequests: 0, activeConnections: 0 }))
       .finally(() => setLoading(false));
@@ -294,7 +289,6 @@ function CsrDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate> }
 
   return (
     <>
-      {/* Stats */}
       <p style={sectionTitle}>👥 Customer Summary</p>
       {stats && (
         <div style={statsGrid}>
@@ -305,16 +299,6 @@ function CsrDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate> }
         </div>
       )}
 
-      {/* Quick Actions */}
-      <p style={sectionTitle}>📌 Quick Actions</p>
-      <div style={actionGrid}>
-        <button style={actionBtn} onClick={() => navigate("/customers")}>Add Customer</button>
-        <button style={actionBtn} onClick={() => navigate("/connections")}>New Connection</button>
-        <button style={{ ...actionBtn, background: "#7c3aed" }} onClick={() => navigate("/connections")}>Change Plan</button>
-        <button style={{ ...actionBtn, background: "#dc2626" }} onClick={() => navigate("/connections")}>Disconnect</button>
-      </div>
-
-      {/* Quick Lookup */}
       <p style={sectionTitle}>🔍 Quick Customer Lookup</p>
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
         <input
@@ -325,30 +309,9 @@ function CsrDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate> }
           onKeyDown={(e) => { if (e.key === "Enter" && searchCode.trim()) navigate(`/customers?search=${searchCode.trim()}`); }}
           style={{ border: "1px solid #d1d5db", borderRadius: "6px", padding: "8px 12px", fontSize: "13px", width: "240px" }}
         />
-        <button
-          style={{ ...actionBtn, background: "#4b5563" }}
-          onClick={() => { if (searchCode.trim()) navigate(`/customers?search=${searchCode.trim()}`); }}
-        >
-          Search
-        </button>
+        <button style={{ ...actionBtn, background: "#4b5563" }} onClick={() => { if (searchCode.trim()) navigate(`/customers?search=${searchCode.trim()}`); }}>Search</button>
       </div>
 
-      {/* Top Plans */}
-      {topPlans.length > 0 && (
-        <>
-          <p style={sectionTitle}>📦 Popular Plans</p>
-          {topPlans.slice(0, 5).map((p) => (
-            <div key={p.planName} style={insightCard}>
-              <span style={{ fontWeight: 500 }}>{p.planName}</span>
-              <span style={{ fontSize: "13px", color: "#6b7280", marginLeft: "12px" }}>
-                {p.activeCount} active — ₹{p.monthlyPrice}/mo
-              </span>
-            </div>
-          ))}
-        </>
-      )}
-
-      {/* Recent Activity */}
       {recentActivity.length > 0 && (
         <>
           <p style={sectionTitle}>📋 Recent Activity</p>
@@ -356,11 +319,19 @@ function CsrDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate> }
             <div key={a.id} style={insightCard}>
               <span style={{ fontWeight: 500, fontSize: "13px" }}>{a.type}</span>
               <span style={{ fontSize: "13px", color: "#6b7280", marginLeft: "8px" }}>{a.description}</span>
-              <span style={{ fontSize: "11px", color: "#9ca3af", marginLeft: "auto", float: "right" }}>{a.timestamp}</span>
+              <span style={{ fontSize: "11px", color: "#9ca3af", float: "right" }}>{a.timestamp}</span>
             </div>
           ))}
         </>
       )}
+
+      <p style={sectionTitle}>📌 Quick Actions</p>
+      <div style={actionGrid}>
+        <button style={{ ...actionBtn, flex: 1 }} onClick={() => navigate("/customers")}>Add Customer</button>
+        <button style={{ ...actionBtn, flex: 1 }} onClick={() => navigate("/connections")}>New Connection</button>
+        <button style={{ ...actionBtn, flex: 1, background: "#7c3aed" }} onClick={() => navigate("/connections")}>Change Plan</button>
+        <button style={{ ...actionBtn, flex: 1, background: "#dc2626" }} onClick={() => navigate("/connections")}>Disconnect</button>
+      </div>
     </>
   );
 }
@@ -416,13 +387,12 @@ function MaintDashboard({ navigate }: { navigate: ReturnType<typeof useNavigate>
         </>
       )}
 
-      {/* Quick Actions */}
       <p style={sectionTitle}>⚡ Quick Actions</p>
       <div style={actionGrid}>
-        <button style={actionBtn} onClick={() => navigate("/maintenance")}>View All Tasks</button>
-        <button style={{ ...actionBtn, background: "#059669" }} onClick={() => navigate("/maintenance")}>Mark Resolved</button>
-        <button style={{ ...actionBtn, background: "#4b5563" }} onClick={() => navigate("/capacity")}>Check Capacity</button>
-        <button style={{ ...actionBtn, background: "#7c3aed" }} onClick={() => navigate("/inventory")}>Inventory Status</button>
+        <button style={{ ...actionBtn, flex: 1 }} onClick={() => navigate("/maintenance")}>View All Tasks</button>
+        <button style={{ ...actionBtn, flex: 1, background: "#059669" }} onClick={() => navigate("/maintenance")}>Mark Resolved</button>
+        <button style={{ ...actionBtn, flex: 1, background: "#4b5563" }} onClick={() => navigate("/capacity")}>Check Capacity</button>
+        <button style={{ ...actionBtn, flex: 1, background: "#7c3aed" }} onClick={() => navigate("/inventory")}>Inventory Status</button>
       </div>
     </>
   );

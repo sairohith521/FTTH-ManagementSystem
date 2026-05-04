@@ -23,21 +23,30 @@ export default function Inventory() {
   const [activeTab, setActiveTab] = useState<Tab>("summary");
 
   return (
-    <PageWrapper title="Inventory Admin">
-      <div className="flex gap-2 flex-wrap">
+    <PageWrapper title="Inventory">
+      <div style={{ display: "flex", gap: "8px" }}>
         {tabs.map((t) => (
-          <Button
+          <button
             key={t.key}
-            variant={activeTab === t.key ? "primary" : "outline"}
             onClick={() => setActiveTab(t.key)}
-            className="text-xs"
+            style={{
+              flex: 1,
+              padding: "8px 0",
+              fontSize: "13px",
+              fontWeight: 500,
+              borderRadius: "6px",
+              cursor: "pointer",
+              border: activeTab === t.key ? "none" : "1px solid #d1d5db",
+              background: activeTab === t.key ? "#2563eb" : "transparent",
+              color: activeTab === t.key ? "#ffffff" : "#1e293b",
+            }}
           >
             {t.label}
-          </Button>
+          </button>
         ))}
       </div>
 
-      <div className="mt-2">
+      <div style={{ marginTop: "8px" }}>
         {activeTab === "summary" && <InventorySummary />}
         {activeTab === "addOlt" && <AddOltForm onSuccess={() => setActiveTab("summary")} />}
         {activeTab === "removeOlt" && <RemoveOltForm onSuccess={() => setActiveTab("summary")} />}

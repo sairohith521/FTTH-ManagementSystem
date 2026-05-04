@@ -62,12 +62,12 @@ export default function AddSplitterForm({ onSuccess }: Props) {
   return (
     <Card>
       <h2 className="mb-4">Add Splitter to OLT</h2>
-      <div className="max-w-xs mb-4">
+      <div style={{ width: "140px", marginBottom: "16px" }}>
         <Input
           label="Select Pincode"
           value={pincode}
           onChange={(e) => setPincode(e.target.value)}
-          placeholder="Type or pick..."
+          placeholder="Pincode"
           list="add-splitter-pincode-list"
         />
         <datalist id="add-splitter-pincode-list">

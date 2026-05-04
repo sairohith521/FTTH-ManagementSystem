@@ -6,10 +6,5 @@ interface Props {
 }
 
 export default function PageWrapper({ title, children }: Props) {
-  return (
-    <div className="page-container">
-      <h1>{title}</h1>
-      {children}
-    </div>
-  );
+  return <div className="page-container">{children}</div>;
 }

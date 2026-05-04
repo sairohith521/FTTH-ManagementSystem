@@ -84,10 +84,10 @@ export default function InventorySummary() {
 
   return (
     <Card>
-      <h2 className="mb-3">Inventory Summary</h2>
+      <h2 style={{ textAlign: "center", marginBottom: "16px" }}>Inventory Summary</h2>
 
-      <div className="flex items-end gap-3 flex-wrap mb-4">
-        <div className="w-40">
+      <div style={{ display: "flex", alignItems: "flex-end", gap: "10px", marginBottom: "16px" }}>
+        <div style={{ width: "130px" }}>
           <Select
             label="Search By"
             value={searchBy}
@@ -104,7 +104,7 @@ export default function InventorySummary() {
         </div>
 
         {searchBy === "pincode" && (
-          <div className="w-48">
+          <div style={{ width: "140px" }}>
             <Input
               label="Pincode"
               value={pincodeValue}
@@ -121,7 +121,7 @@ export default function InventorySummary() {
         )}
 
         {searchBy === "oltType" && (
-          <div className="w-48">
+          <div style={{ width: "140px" }}>
             <Select
               label="OLT Type"
               value={oltTypeValue}
@@ -136,8 +136,13 @@ export default function InventorySummary() {
 
         {searchBy && (
           <>
-            <Button onClick={handleSearch} className="text-xs">Search</Button>
-            <Button variant="outline" onClick={handleReset} className="text-xs">Reset</Button>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontSize: "13px", color: "transparent", userSelect: "none" }}>_</span>
+              <div style={{ display: "flex", gap: "6px" }}>
+                <Button onClick={handleSearch} style={{ padding: "6px 12px", fontSize: "12px" }}>Search</Button>
+                <Button variant="outline" onClick={handleReset} style={{ padding: "6px 12px", fontSize: "12px" }}>Reset</Button>
+              </div>
+            </div>
           </>
         )}
       </div>
