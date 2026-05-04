@@ -1,0 +1,40 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#A78BFA"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="16" y="16" width="480" height="480" rx="110" fill="url(#bg)" />
+
+  <circle cx="256" cy="240" r="130" fill="none" stroke="url(#glow)" stroke-width="12" opacity="0.5"/>
+
+  <circle cx="256" cy="240" r="95" fill="none" stroke="url(#accent)" stroke-width="20"/>
+
+  <path d="M150 240 C200 160, 312 160, 362 240" fill="none" stroke="url(#accent)" stroke-width="16" stroke-linecap="round"/>
+  <path d="M150 240 C200 320, 312 320, 362 240" fill="none" stroke="url(#accent)" stroke-width="16" stroke-linecap="round"/>
+
+  <circle cx="150" cy="240" r="10" fill="#67E8F9"/>
+  <circle cx="362" cy="240" r="10" fill="#818CF8"/>
+  <circle cx="256" cy="120" r="8" fill="#38BDF8"/>
+  <circle cx="256" cy="360" r="8" fill="#A78BFA"/>
+
+  <text x="256" y="460" text-anchor="middle"
+        font-size="34"
+        font-family="Segoe UI, Arial"
+        fill="#E2E8F0"
+        font-weight="600">
+    Aaha Telecom
+  </text>
+</svg>
