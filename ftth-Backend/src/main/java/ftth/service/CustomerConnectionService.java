@@ -44,10 +44,11 @@ public void createConnection(AddConnectionRequest req,Long currentUserId) {
     // 2️⃣ Validate plan (READ: plans)
     // ===============================
    Plan selectedPlan;
-    long planId = req.getPlanId();
-    selectedPlan = planService.findPlanById(planId);
-    if (selectedPlan == null || !selectedPlan.isActive()) {
-        throw new RuntimeException("Invalid plan ID: " + planId);
+    while (true) {
+        long planId = req.getPlanId();
+        selectedPlan = planService.findPlanById(planId);
+        if (selectedPlan != null && selectedPlan.isActive()) break;
+        System.out.println("Invalid plan ID. Please select from the list above.");
     }
     // =================================
     // 3️⃣ Validate service area (READ: service_areas)
