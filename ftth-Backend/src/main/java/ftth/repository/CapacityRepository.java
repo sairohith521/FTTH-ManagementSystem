@@ -33,16 +33,18 @@ public class CapacityRepository {
             oltData.put("utilPercent", row.getUtilization());
 
             // Determine breach and warning status
-            boolean breach = row.getUtilization() > 80;
+            boolean breach = row.getUtilization() >= 80.0;
             oltData.put("breach", breach);
 
             String warning = null;
             if (breach) {
+                if (row.getSplitterCount() < 3) {
+                    warning = "ADD_SPLITTER";
+                } else {
+                    warning = "ADD_OLT";
+                }
+            } else if (row.getUtilization() >= 70.0) {
                 warning = "CAPACITY_BREACH";
-            } else if (row.getUtilization() > 70) {
-                warning = "ADD_SPLITTER";
-            } else if (row.getUtilization() > 60) {
-                warning = "ADD_OLT";
             }
             oltData.put("warning", warning);
 

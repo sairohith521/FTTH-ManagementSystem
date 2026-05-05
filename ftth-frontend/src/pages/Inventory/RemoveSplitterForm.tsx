@@ -75,23 +75,21 @@ export default function RemoveSplitterForm({ onSuccess }: Props) {
   return (
     <Card>
       <h2 className="mb-4">Remove Splitter from OLT</h2>
-      <div className="flex gap-4 mb-4 flex-wrap">
-        <div className="w-48">
+      <div style={{ display: "flex", gap: "12px", alignItems: "flex-end", marginBottom: "16px" }}>
+        <div style={{ width: "140px" }}>
           <Input
             label="Pincode"
             value={pincode}
             onChange={(e) => { setPincode(e.target.value); setSelectedOlt(""); }}
-            placeholder="Type or pick..."
+            placeholder="Pincode"
             list="remove-splitter-pincode-list"
           />
           <datalist id="remove-splitter-pincode-list">
-            {pincodes.map((p) => (
-              <option key={p} value={p} />
-            ))}
+            {pincodes.map((p) => <option key={p} value={p} />)}
           </datalist>
         </div>
         {olts.length > 0 && (
-          <div className="w-56">
+          <div style={{ width: "160px" }}>
             <Select
               label="OLT"
               value={selectedOlt}

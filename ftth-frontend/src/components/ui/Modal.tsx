@@ -15,11 +15,11 @@ export default function Modal({ open, title, children, onConfirm, onCancel, conf
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-surface rounded-md border border-border p-6 w-full max-w-md shadow-lg">
-        <h3 className="mb-3">{title}</h3>
-        <div className="mb-5 text-sm text-textSecondary">{children}</div>
-        <div className="flex justify-end gap-2">
+    <div className="modal-overlay">
+      <div className="modal-box">
+        <div className="modal-title">{title}</div>
+        <div className="modal-body">{children}</div>
+        <div className="modal-actions">
           <Button variant="outline" onClick={onCancel}>Cancel</Button>
           <Button variant={danger ? "danger" : "primary"} onClick={onConfirm}>{confirmLabel}</Button>
         </div>

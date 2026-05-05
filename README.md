@@ -240,6 +240,15 @@ FTTHProject/
 
 ---
 
+## 📸 Screenshots
+
+> _Add screenshots of your application here_
+
+| Dashboard | Inventory | Customer Management |
+|-----------|-----------|-------------------|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Inventory](docs/screenshots/inventory.png) | ![Customers](docs/screenshots/customers.png) |
+
+---
 
 ## 🤝 Contributing
 

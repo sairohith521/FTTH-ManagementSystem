@@ -7,12 +7,9 @@ interface Props extends SelectHTMLAttributes<HTMLSelectElement> {
 
 export default function Select({ label, options, className = "", ...props }: Props) {
   return (
-    <div className="flex flex-col gap-1">
-      {label && <label className="text-[13px] font-medium text-textSecondary">{label}</label>}
-      <select
-        className={`border border-border rounded-md px-3 py-2 text-sm bg-surface text-textPrimary outline-none focus:border-primary ${className}`}
-        {...props}
-      >
+    <div className="form-field">
+      {label && <label className="form-label">{label}</label>}
+      <select className={`form-select ${className}`} {...props}>
         <option value="">Select...</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>

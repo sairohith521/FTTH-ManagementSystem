@@ -65,12 +65,12 @@ export default function RemoveOltForm({ onSuccess }: Props) {
   return (
     <Card>
       <h2 className="mb-4">Remove OLT</h2>
-      <div className="max-w-xs mb-4">
+      <div style={{ width: "140px", marginBottom: "16px" }}>
         <Input
           label="Select Pincode"
           value={pincode}
           onChange={(e) => setPincode(e.target.value)}
-          placeholder="Type or pick..."
+          placeholder="Pincode"
           list="remove-olt-pincode-list"
         />
         <datalist id="remove-olt-pincode-list">

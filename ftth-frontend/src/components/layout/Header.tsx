@@ -1,21 +1,24 @@
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { sidebarItems } from "../layout/sidebarConfig";
 import Button from "../ui/Button";
 import Badge from "../ui/Badge";
 
 export default function Header() {
   const { user, role, logout } = useAuth();
+  const location = useLocation();
+
+  const title = sidebarItems.find((item) => item.path === location.pathname)?.label ?? "";
 
   return (
-    <header className="flex items-center justify-between border-b border-border px-5 py-3 bg-surface">
-      <h2>Aaha Telecom</h2>
-      <div className="flex items-center gap-3">
+    <header className="app-header">
+      <div className="app-header__title">{title}</div>
+      <div className="app-header__actions">
         {user && (
           <>
-            <span className="text-sm text-textSecondary">{user}</span>
+            <span className="app-header__user">{user}</span>
             <Badge label={role} variant="neutral" />
-            <Button variant="danger" onClick={logout} className="text-xs px-3 py-1">
-              Logout
-            </Button>
+            <Button variant="danger" onClick={logout} className="text-xs px-3 py-1">Logout</Button>
           </>
         )}
       </div>
