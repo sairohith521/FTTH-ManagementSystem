@@ -16,3 +16,7 @@ ftth-Backend/target/
 
 # ── Duplicate root src (not part of project) ────────────
 src/
+
+# ── Compiled/generated files ────────────────────────────
+*.class
+*.lst
