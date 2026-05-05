@@ -120,6 +120,27 @@ public CustomerConnection findActiveByCustomerCode(String customerCode) {
 }
 
     // ===============================
+    // READ (active connection by customer_id)
+    // ===============================
+    private static final String FIND_ACTIVE_BY_CUSTOMER_ID_SQL =
+        "SELECT * FROM customer_connections WHERE customer_id = ? AND connection_status = 'ACTIVE' LIMIT 1";
+
+    public CustomerConnection findActiveByCustomerId(Long customerId) {
+        try (Connection conn = DbConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(FIND_ACTIVE_BY_CUSTOMER_ID_SQL)) {
+            ps.setLong(1, customerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error checking active connection for customer", e);
+        }
+        return null;
+    }
+
+    // ===============================
     // READ (by customer)
     // ===============================
     private static final String FIND_BY_CUSTOMER_SQL =

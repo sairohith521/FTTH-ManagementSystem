@@ -81,6 +81,13 @@ public void createConnection(AddConnectionRequest req,Long currentUserId) {
     // 5️⃣ Insert or fetch customer (customers)
     // =================================
     Customer customer =customerService.findOrCreateCustomer(req.getCustomerName(),req.getEmail(),req.getSalary());
+
+    // 5.5️⃣ Check if customer already has an active connection
+    CustomerConnection existing = connectionRepo.findActiveByCustomerId(customer.getCustomerId());
+    if (existing != null) {
+        throw new RuntimeException("Customer already has an active connection (ID: " + existing.getConnectionId() + ")");
+    }
+
     // =================================
     // 6️⃣ Insert customer connection (CORE)
     // TABLE: customer_connections
